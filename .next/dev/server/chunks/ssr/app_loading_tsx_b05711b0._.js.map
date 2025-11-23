@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///home/user/note/app/loading.tsx"],"sourcesContent":["import { BookOpen } from \"lucide-react\"\n\nexport default function Loading() {\n  return (\n    <div className=\"min-h-screen bg-background flex items-center justify-center\">\n      <div className=\"flex flex-col items-center gap-4\">\n        <div className=\"relative\">\n          <div className=\"absolute inset-0 animate-ping\">\n            <div className=\"p-4 bg-primary/20 rounded-lg\">\n              <BookOpen className=\"h-8 w-8 text-primary\" />\n            </div>\n          </div>\n          <div className=\"relative p-4 bg-primary/10 rounded-lg border border-primary/20\">\n            <BookOpen className=\"h-8 w-8 text-primary\" />\n          </div>\n        </div>\n        <p className=\"text-muted-foreground animate-pulse\">Carregando anotações...</p>\n      </div>\n    </div>\n  )\n}\n"],"names":[],"mappings":";;;;;;;;;;;;AAEe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAI,WAAU;;8BACb,8OAAC;oBAAI,WAAU;;sCACb,8OAAC;4BAAI,WAAU;sCACb,cAAA,8OAAC;gCAAI,WAAU;0CACb,cAAA,8OAAC;oCAAS,WAAU;;;;;;;;;;;;;;;;sCAGxB,8OAAC;4BAAI,WAAU;sCACb,cAAA,8OAAC;gCAAS,WAAU;;;;;;;;;;;;;;;;;8BAGxB,8OAAC;oBAAE,WAAU;8BAAsC;;;;;;;;;;;;;;;;;AAI3D"}}]
+}

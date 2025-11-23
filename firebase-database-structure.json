@@ -1,0 +1,95 @@
+{
+  "usuarios": {
+    "user1": {
+      "username": "admin",
+      "email": "admin@empresa.com",
+      "role": "Administrador",
+      "department": "TI",
+      "createdAt": "2024-01-15T10:00:00.000Z"
+    },
+    "user2": {
+      "username": "operador1",
+      "email": "operador1@empresa.com",
+      "role": "Operador",
+      "department": "Produção",
+      "createdAt": "2024-01-15T10:00:00.000Z"
+    },
+    "user3": {
+      "username": "supervisor",
+      "email": "supervisor@empresa.com",
+      "role": "Supervisor",
+      "department": "Qualidade",
+      "createdAt": "2024-01-15T10:00:00.000Z"
+    }
+  },
+  "anotacoes": {
+    "note1": {
+      "id": "note1",
+      "content": "Verificar emails pendentes do cliente XYZ",
+      "category": "Emails",
+      "userId": "user1",
+      "username": "admin",
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
+    },
+    "note2": {
+      "id": "note2",
+      "content": "Incluir dados de produção do turno da manhã",
+      "category": "Incluir no relatório de balança",
+      "userId": "user2",
+      "username": "operador1",
+      "createdAt": "2024-01-15T11:00:00.000Z",
+      "updatedAt": "2024-01-15T11:00:00.000Z"
+    },
+    "note3": {
+      "id": "note3",
+      "content": "Realizar manutenção preventiva na linha 2",
+      "category": "Tarefas pendentes",
+      "userId": "user3",
+      "username": "supervisor",
+      "createdAt": "2024-01-15T11:30:00.000Z",
+      "updatedAt": "2024-01-15T11:30:00.000Z"
+    },
+    "note4": {
+      "id": "note4",
+      "content": "ATENÇÃO: Problema identificado no setor de embalagem",
+      "category": "RADAR",
+      "userId": "user3",
+      "username": "supervisor",
+      "createdAt": "2024-01-15T12:00:00.000Z",
+      "updatedAt": "2024-01-15T12:00:00.000Z"
+    }
+  },
+  "estocagem": {
+    "current": {
+      "teg": {
+        "A1": false,
+        "A2": false,
+        "A3": false,
+        "A4": false,
+        "B1": false,
+        "B2": false,
+        "B3": false,
+        "B4": false,
+        "C1": false,
+        "C2": false,
+        "C3": false,
+        "C4": false
+      },
+      "teag": {
+        "A1": false,
+        "A2": false,
+        "A3": false,
+        "A4": false,
+        "B1": false,
+        "B2": false,
+        "B3": false,
+        "B4": false,
+        "C1": false,
+        "C2": false,
+        "C3": false,
+        "C4": false
+      }
+    }
+  }
+}
