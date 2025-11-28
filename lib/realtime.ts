@@ -280,3 +280,18 @@ export async function getAllUsers(): Promise<any[]> {
         return [];
     }
 }
+
+export async function getUser(userId: string): Promise<any | null> {
+  try {
+    const db = getFirebaseDatabase();
+    const userRef = ref(db, `${USERS_COLLECTION}/${userId}`);
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+      return { id: snapshot.key, ...snapshot.val() };
+    }
+    return null;
+  } catch (error) {
+    console.error("[v0] Erro ao buscar usuário:", error);
+    return null;
+  }
+}
