@@ -13,7 +13,7 @@ function getApiKey(): string {
 }
 
 export interface FirebaseAuthUser {
-  localId: string
+  uid: string
   email: string
   displayName?: string
   idToken: string
@@ -21,41 +21,52 @@ export interface FirebaseAuthUser {
   expiresIn: string
 }
 
-export async function signInWithEmailPassword(email: string, password: string): Promise<FirebaseAuthUser | null> {
-  try {
-    const url = `${AUTH_BASE_URL}/accounts:signInWithPassword?key=${getApiKey()}`
+// Mapeia códigos de erro do Firebase para mensagens amigáveis em português.
+function mapFirebaseError(errorCode: string): string {
+  switch (errorCode) {
+    case "INVALID_PASSWORD":
+      return "A senha fornecida está incorreta."
+    case "EMAIL_NOT_FOUND":
+      return "Nenhum usuário encontrado com este endereço de email."
+    case "INVALID_EMAIL":
+      return "O endereço de email fornecido é inválido."
+    case "USER_DISABLED":
+      return "A conta para este usuário foi desabilitada."
+    default:
+      return "Ocorreu um erro de autenticação. Verifique suas credenciais."
+  }
+}
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        returnSecureToken: true,
-      }),
-    })
+export async function signInWithEmailPassword(email: string, password: string): Promise<FirebaseAuthUser> {
+  const url = `${AUTH_BASE_URL}/accounts:signInWithPassword?key=${getApiKey()}`
 
-    if (!response.ok) {
-      const error = await response.json()
-      console.error("[v0] Erro ao fazer login:", error)
-      return null
-    }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      returnSecureToken: true,
+    }),
+  })
 
-    const data = await response.json()
+  const data = await response.json()
 
-    return {
-      localId: data.localId,
-      email: data.email,
-      displayName: data.displayName,
-      idToken: data.idToken,
-      refreshToken: data.refreshToken,
-      expiresIn: data.expiresIn,
-    }
-  } catch (error) {
-    console.error("[v0] Erro ao fazer login com Firebase Auth:", error)
-    return null
+  if (!response.ok) {
+    const errorMessage = data.error?.message || "UNKNOWN_ERROR"
+    console.error("[v0] Erro do Firebase Auth:", errorMessage, data)
+    throw new Error(mapFirebaseError(errorMessage))
+  }
+
+  return {
+    uid: data.localId,
+    email: data.email,
+    displayName: data.displayName,
+    idToken: data.idToken,
+    refreshToken: data.refreshToken,
+    expiresIn: data.expiresIn,
   }
 }
 
@@ -87,7 +98,7 @@ export async function getUserInfo(idToken: string): Promise<FirebaseAuthUser | n
     const user = users[0]
 
     return {
-      localId: user.localId,
+      uid: user.localId,
       email: user.email,
       displayName: user.displayName,
       idToken,
@@ -102,9 +113,9 @@ export async function getUserInfo(idToken: string): Promise<FirebaseAuthUser | n
 
 export function convertToAppUser(firebaseUser: FirebaseAuthUser, department: Department): User {
   return {
-    id: firebaseUser.localId,
+    id: firebaseUser.uid,
     username: firebaseUser.email,
-    password: "",
+    password: "", // Senha nunca é armazenada no app
     role: "assistente",
     department: department,
   }
@@ -114,7 +125,7 @@ export function saveAuthSession(firebaseUser: FirebaseAuthUser, department: Depa
   try {
     localStorage.setItem("firebaseAuthToken", firebaseUser.idToken)
     localStorage.setItem("firebaseRefreshToken", firebaseUser.refreshToken)
-    localStorage.setItem("firebaseUserId", firebaseUser.localId)
+    localStorage.setItem("firebaseUserId", firebaseUser.uid)
     localStorage.setItem("firebaseUserEmail", firebaseUser.email)
     localStorage.setItem("userDepartment", department)
   } catch (error) {
@@ -125,11 +136,9 @@ export function saveAuthSession(firebaseUser: FirebaseAuthUser, department: Depa
 export async function loadAuthSession(): Promise<User | null> {
   try {
     const idToken = localStorage.getItem("firebaseAuthToken")
-    const userId = localStorage.getItem("firebaseUserId")
-    const userEmail = localStorage.getItem("firebaseUserEmail")
     const department = (localStorage.getItem("userDepartment") as Department) || "balanca"
 
-    if (!idToken || !userId || !userEmail) {
+    if (!idToken) {
       return null
     }
 

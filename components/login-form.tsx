@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BookOpen, LogIn } from "lucide-react"
-import { signInWithEmailPassword, convertToAppUser, saveAuthSession } from "@/lib/firebase-auth"
-import { saveOrUpdateUser } from "@/lib/realtime"
-import type { User, Department } from "@/types/user"
+import { signInWithEmailPassword, saveAuthSession } from "@/lib/firebase-auth"
+import { getUser, saveOrUpdateUser } from "@/lib/realtime"
+import type { User } from "@/types/user"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 interface LoginFormProps {
@@ -17,7 +17,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [department, setDepartment] = useState<Department>("balanca")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -40,27 +39,39 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true)
 
     try {
+      // 1. Autentica com o Firebase Auth. A função agora lança um erro detalhado em caso de falha.
       const firebaseUser = await signInWithEmailPassword(email, password)
 
-      if (firebaseUser) {
-        saveAuthSession(firebaseUser, department)
+      // 2. Busca o perfil do usuário no Realtime Database.
+      let appUser = await getUser(firebaseUser.uid)
 
-        const appUser = convertToAppUser(firebaseUser, department)
+      // 3. Se o perfil não existir, cria um novo com valores padrão.
+      if (!appUser) {
+        const newUser: User = {
+          id: firebaseUser.uid,
+          username: firebaseUser.email?.split('@')[0] || "Novo Usuário",
+          role: "assistente",
+          department: "balanca",
+        }
+        await saveOrUpdateUser(newUser)
+        appUser = await getUser(firebaseUser.uid) // Busca o usuário recém-criado
 
-        await saveOrUpdateUser(appUser)
-
-        onLogin(appUser)
-      } else {
-        setError(
-          "Email ou senha incorretos. Certifique-se de que o usuário foi criado no Firebase Authentication Console.",
-        )
-        setPassword("")
+        if (!appUser) {
+          // Este erro só deve acontecer se houver um problema grave com o banco de dados.
+          setError("Falha ao criar o perfil do usuário no banco de dados. Contate o suporte.")
+          setIsLoading(false)
+          return
+        }
       }
+
+      // 4. Salva a sessão e executa o login no aplicativo.
+      saveAuthSession(firebaseUser, appUser.department)
+      onLogin(appUser)
+      
     } catch (error: any) {
-      console.error("Erro ao fazer login:", error)
-      setError(
-        "Erro ao fazer login. Verifique se o usuário existe no Firebase Authentication Console (https://console.firebase.google.com → Authentication → Users).",
-      )
+      // 5. Exibe a mensagem de erro específica vinda do Firebase (ex: "Senha incorreta").
+      console.error("[v0] Erro detalhado ao fazer login:", error.message)
+      setError(error.message)
       setPassword("")
     } finally {
       setIsLoading(false)
@@ -84,39 +95,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Departamento</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  variant={department === "balanca" ? "default" : "outline"}
-                  onClick={() => setDepartment("balanca")}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  Balança
-                </Button>
-                <Button
-                  type="button"
-                  variant={department === "cco" ? "default" : "outline"}
-                  onClick={() => setDepartment("cco")}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  CCO
-                </Button>
-                <Button
-                  type="button"
-                  variant={department === "supervisor" ? "default" : "outline"}
-                  onClick={() => setDepartment("supervisor")}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  Supervisor
-                </Button>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
