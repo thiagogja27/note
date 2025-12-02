@@ -1,5 +1,32 @@
 {
-  "node": {},
+  "node": {
+    "40a4ac29628b71d91b32b83c75adfff0a5cc335161": {
+      "workers": {
+        "app/api/summarize-notes/route": {
+          "moduleId": "(rsc)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Fuser%2Fnote%2Fapp%2Fapi%2Fsummarize-notes%2Froute.ts%22%2C%5B%7B%22id%22%3A%2240a4ac29628b71d91b32b83c75adfff0a5cc335161%22%2C%22exportedName%22%3A%22POST%22%2C%22filename%22%3A%22app%2Fapi%2Fsummarize-notes%2Froute.ts%22%7D%5D%5D%2C%5B%22%2Fhome%2Fuser%2Fnote%2Flib%2Fgemini.ts%22%2C%5B%7B%22id%22%3A%22408d4a332c60d9391f402751ac89be018e3dbdb429%22%2C%22exportedName%22%3A%22generateNotesSummary%22%2C%22filename%22%3A%22lib%2Fgemini.ts%22%7D%5D%5D%5D&__client_imported__=!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/api/summarize-notes/route": "rsc"
+      },
+      "filename": "app/api/summarize-notes/route.ts",
+      "exportedName": "POST"
+    },
+    "408d4a332c60d9391f402751ac89be018e3dbdb429": {
+      "workers": {
+        "app/api/summarize-notes/route": {
+          "moduleId": "(rsc)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Fuser%2Fnote%2Fapp%2Fapi%2Fsummarize-notes%2Froute.ts%22%2C%5B%7B%22id%22%3A%2240a4ac29628b71d91b32b83c75adfff0a5cc335161%22%2C%22exportedName%22%3A%22POST%22%2C%22filename%22%3A%22app%2Fapi%2Fsummarize-notes%2Froute.ts%22%7D%5D%5D%2C%5B%22%2Fhome%2Fuser%2Fnote%2Flib%2Fgemini.ts%22%2C%5B%7B%22id%22%3A%22408d4a332c60d9391f402751ac89be018e3dbdb429%22%2C%22exportedName%22%3A%22generateNotesSummary%22%2C%22filename%22%3A%22lib%2Fgemini.ts%22%7D%5D%5D%5D&__client_imported__=!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/api/summarize-notes/route": "rsc"
+      },
+      "filename": "lib/gemini.ts",
+      "exportedName": "generateNotesSummary"
+    }
+  },
   "edge": {},
   "encryptionKey": "oZJHQXSfwZbFTwAN0K8CT5fsjMJj7h3Ahah7TPxEWsw="
 }

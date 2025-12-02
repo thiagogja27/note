@@ -3,27 +3,24 @@
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth"
-import { getAllUsers, listenToAllUserNotes, updateNote, deleteNote, toggleNoteCompleted } from "@/lib/realtime"
+import { getAllUsers, listenToAllUserNotes, deleteNote, listenToRadarNotes, addNote } from "@/lib/realtime"
 import { listenToTasks, addTask, updateTask, deleteTask as deleteTaskFromDb } from "@/lib/tasks"
 import type { User } from "@/types/user"
 import type { Task, TaskPriority, TaskStatus, Shift } from "@/types/task"
 import type { Note } from "@/types/note"
-import { CATEGORIES } from "@/types/note"
+import { CATEGORIES, RADAR_CATEGORY } from "@/types/note"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { Plus, Pencil, Trash2, ClipboardList, LogOut, Check, X, Users } from 'lucide-react'
-import { formatDistanceToNow } from "date-fns"
-import { ptBR } from "date-fns/locale/pt-BR"
-
-// CORRECTED: Defining a type that includes 'Todos'
+import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users } from 'lucide-react'
+import { formatDistanceToNow } from "@/lib/format-date"
+import { RadarSummary } from "@/components/RadarSummary"
 
 type ShiftWithAll = Shift | "Todos";
 
@@ -59,7 +56,6 @@ export default function SupervisorPage() {
   const [formTitle, setFormTitle] = useState("")
   const [formDescription, setFormDescription] = useState("")
   const [formPriority, setFormPriority] = useState<TaskPriority>("media")
-  // CORRECTED: Using the new ShiftWithAll type for the state
   const [formShift, setFormShift] = useState<ShiftWithAll>("Todos")
   const [formAssignedTo, setFormAssignedTo] = useState<string[]>([])
   const [formDueDate, setFormDueDate] = useState("")
@@ -67,8 +63,9 @@ export default function SupervisorPage() {
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "all">("all")
 
   const [allNotes, setAllNotes] = useState<Note[]>([])
+  const [radarNotes, setRadarNotes] = useState<Note[]>([])
+  const [newRadarInput, setNewRadarInput] = useState("")
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([])
-  const [editingNote, setEditingNote] = useState<{ id: string; content: string } | null>(null)
   const [userFilter, setUserFilter] = useState<string>("all")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   
@@ -91,9 +88,11 @@ export default function SupervisorPage() {
     if (currentUser) {
       const unsubscribeTasks = listenToTasks(setTasks)
       const unsubscribeNotes = listenToAllUserNotes(setAllNotes)
+      const unsubscribeRadar = listenToRadarNotes(setRadarNotes)
       return () => {
         unsubscribeTasks()
         unsubscribeNotes()
+        unsubscribeRadar()
       }
     }
   }, [currentUser])
@@ -114,6 +113,25 @@ export default function SupervisorPage() {
     router.push("/")
   }
 
+  const handleAddRadarNote = async () => {
+    const content = newRadarInput.trim()
+    if (!content || !currentUser) return
+    try {
+      await addNote({
+        title: content.substring(0, 50),
+        content,
+        category: RADAR_CATEGORY,
+        userId: currentUser.id,
+        createdBy: currentUser.username,
+        createdByDepartment: currentUser.department
+      })
+      setNewRadarInput("")
+      toast({ title: "Adicionado ao RADAR!" })
+    } catch (error) {
+      toast({ title: "Erro ao adicionar ao RADAR", variant: "destructive" })
+    }
+  }
+
   const resetTaskForm = () => {
     setFormTitle(""); setFormDescription(""); setFormPriority("media"); setFormShift("Todos");
     setFormAssignedTo([]); setFormDueDate(""); setEditingTask(null);
@@ -123,7 +141,8 @@ export default function SupervisorPage() {
     if (task) {
       setEditingTask(task)
       setFormTitle(task.title); setFormDescription(task.description); setFormPriority(task.priority);
-      setFormShift(task.shift); setFormAssignedTo(task.assignedTo);
+      setFormShift(task.shift as ShiftWithAll); // Asserção para conformidade
+      setFormAssignedTo(task.assignedTo);
       setFormDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "");
     } else {
       resetTaskForm();
@@ -139,11 +158,11 @@ export default function SupervisorPage() {
 
     try {
       const taskData: Partial<Task> = {
-        title: formTitle, 
-        description: formDescription, 
-        priority: formPriority, 
-        shift: formShift,
-        assignedTo: formAssignedTo, 
+        title: formTitle,
+        description: formDescription,
+        priority: formPriority,
+        shift: formShift as any, // <-- CORREÇÃO APLICADA AQUI
+        assignedTo: formAssignedTo,
         dueDate: formDueDate ? new Date(formDueDate) : undefined,
       }
       
@@ -151,11 +170,11 @@ export default function SupervisorPage() {
         await updateTask(editingTask.id, taskData)
         toast({ title: "Tarefa atualizada com sucesso!" })
       } else {
-        await addTask({ 
-          ...taskData, 
-          status: "pendente", 
-          assignedBy: currentUser.username, 
-          assignedByDepartment: "supervisor" 
+        await addTask({
+          ...taskData,
+          status: "pendente",
+          assignedBy: currentUser.username,
+          assignedByDepartment: "supervisor"
         } as Task)
         toast({ title: "Tarefa criada e atribuída com sucesso!" })
       }
@@ -174,27 +193,6 @@ export default function SupervisorPage() {
       toast({ title: "Erro ao excluir tarefa", variant: "destructive" })
     }
   }
-  
-  const filteredTasks = tasks.filter((task) => {
-    if (filterShift !== "all" && task.shift !== filterShift && task.shift !== "Todos") return false
-    if (filterStatus !== "all" && task.status !== filterStatus) return false
-    return true
-  })
-
-  const handleStartEditNote = (note: Note) => {
-    setEditingNote({ id: note.id, content: note.content })
-  }
-
-  const handleSaveEditNote = async () => {
-    if (!editingNote || !currentUser) return
-    try {
-      await updateNote(editingNote.id, { content: editingNote.content }, currentUser.username, currentUser.department)
-      setEditingNote(null)
-      toast({ title: "Anotação atualizada com sucesso!" })
-    } catch (error) {
-      toast({ title: "Erro ao atualizar anotação", variant: "destructive" })
-    }
-  }
 
   const handleDeleteNote = async (id: string) => {
     if (!currentUser) return
@@ -206,15 +204,11 @@ export default function SupervisorPage() {
     }
   }
   
-  const handleToggleCompletedNote = async (note: Note) => {
-    if (!currentUser) return
-    try {
-      await toggleNoteCompleted(note.id, !note.completed, currentUser.username, currentUser.department)
-      toast({ title: note.completed ? "Anotação desmarcada" : "Anotação concluída!" })
-    } catch (error) {
-      toast({ title: "Erro ao atualizar anotação", variant: "destructive" })
-    }
-  }
+  const filteredTasks = tasks.filter((task) => {
+    if (filterShift !== "all" && task.shift !== filterShift && task.shift !== "Todos") return false
+    if (filterStatus !== "all" && task.status !== filterStatus) return false
+    return true
+  })
   
   if (loading || !currentUser) {
     return (
@@ -243,6 +237,31 @@ export default function SupervisorPage() {
                 <Button variant="outline" onClick={handleLogout} className="gap-2"><LogOut className="h-4 w-4" /> Sair</Button>
             </div>
         </header>
+
+        <div className="my-6">
+            <RadarSummary radarNotes={radarNotes} />
+        </div>
+
+        <div className="bg-card border-2 border-primary rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-3 text-primary">RADAR - Área Compartilhada</h2>
+          <div className="flex gap-2 mb-4">
+            <Input placeholder="Adicionar item importante ao RADAR..." value={newRadarInput} onChange={(e) => setNewRadarInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddRadarNote()} />
+            <Button onClick={handleAddRadarNote}><Plus className="h-4 w-4" /></Button>
+          </div>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+            {radarNotes.length === 0 ? <p className="text-sm text-center text-muted-foreground py-4">Nenhum item no RADAR.</p> : radarNotes.map(note => (
+              <div key={note.id} className="group bg-primary/5 border border-primary/30 p-3 rounded">
+                <p className="text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(note.createdAt)}</span>
+                  <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDeleteNote(note.id)}><Trash2 className="h-3 w-3" /></Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="bg-card border border-border rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><ClipboardList className="h-5 w-5" />Gerenciador de Tarefas</h2>
@@ -274,7 +293,7 @@ export default function SupervisorPage() {
                 <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as TaskStatus | "all")}><SelectTrigger className="w-[180px]"><SelectValue placeholder="Filtrar por status" /></SelectTrigger><SelectContent><SelectItem value="all">Todos os Status</SelectItem>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace("_", " ").charAt(0).toUpperCase() + s.replace("_", " ").slice(1)}</SelectItem>)}</SelectContent></Select>
             </div>
             <div className="space-y-4">
-                {filteredTasks.length === 0 ? <div className="text-center py-12"><ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Nenhuma tarefa encontrada para os filtros selecionados.</p></div> : filteredTasks.map((task) => (<div key={task.id} className="bg-secondary/20 border border-border rounded-lg p-6 hover:border-primary/50 transition-colors"><div className="flex items-start justify-between gap-4"><div className="flex-1"><div className="flex items-center flex-wrap gap-2 mb-2"><h3 className="text-lg font-semibold">{task.title}</h3><span className={`text-xs px-2 py-1 rounded-full border ${PRIORITY_COLORS[task.priority]}`}>{task.priority.toUpperCase()}</span><span className={`text-xs px-2 py-1 rounded-full border ${STATUS_COLORS[task.status]}`}>{task.status.replace("_", " ").toUpperCase()}</span></div><p className="text-sm text-muted-foreground mb-3">{task.description}</p><div className="flex flex-wrap gap-4 text-xs text-muted-foreground"><span>Turno: <strong>{task.shift}</strong></span><span>Atribuído a: <strong>{task.assignedTo.join(", ")}</strong></span><span>Por: <strong>{task.assignedBy}</strong></span>{task.dueDate && <span>Vencimento: <strong>{new Date(task.dueDate).toLocaleDateString("pt-BR")}</strong></span>}<span>{formatDistanceToNow(new Date(task.createdAt), { addSuffix: true, locale: ptBR })}</span></div></div><div className="flex gap-2"><Button variant="ghost" size="icon" onClick={() => handleOpenTaskDialog(task)}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteTask(task.id)}><Trash2 className="h-4 w-4" /></Button></div></div></div>))}
+                {filteredTasks.length === 0 ? <div className="text-center py-12"><ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Nenhuma tarefa encontrada para os filtros selecionados.</p></div> : filteredTasks.map((task) => (<div key={task.id} className="bg-secondary/20 border border-border rounded-lg p-6 hover:border-primary/50 transition-colors"><div className="flex items-start justify-between gap-4"><div className="flex-1"><div className="flex items-center flex-wrap gap-2 mb-2"><h3 className="text-lg font-semibold">{task.title}</h3><span className={`text-xs px-2 py-1 rounded-full border ${PRIORITY_COLORS[task.priority]}`}>{task.priority.toUpperCase()}</span><span className={`text-xs px-2 py-1 rounded-full border ${STATUS_COLORS[task.status]}`}>{task.status.replace("_", " ").toUpperCase()}</span></div><p className="text-sm text-muted-foreground mb-3">{task.description}</p><div className="flex flex-wrap gap-4 text-xs text-muted-foreground"><span>Turno: <strong>{task.shift}</strong></span><span>Atribuído a: <strong>{task.assignedTo.join(", ")}</strong></span><span>Por: <strong>{task.assignedBy}</strong></span>{task.dueDate && <span>Vencimento: <strong>{new Date(task.dueDate).toLocaleDateString("pt-BR")}</strong></span>}<span>{formatDistanceToNow(new Date(task.createdAt))}</span></div></div><div className="flex gap-2"><Button variant="ghost" size="icon" onClick={() => handleOpenTaskDialog(task)}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteTask(task.id)}><Trash2 className="h-4 w-4" /></Button></div></div></div>))}
             </div>
         </div>
 
@@ -285,8 +304,21 @@ export default function SupervisorPage() {
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}><SelectTrigger className="w-[220px]"><SelectValue placeholder="Filtrar por categoria" /></SelectTrigger><SelectContent><SelectItem value="all">Todas as Categorias</SelectItem>{CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select>
             </div>
             <div className="space-y-4">
-                {filteredNotes.length > 0 ? (filteredNotes.map(note => (<div key={note.id} className="group bg-secondary/30 border border-border rounded p-4 hover:border-primary/50 transition-colors">{editingNote?.id === note.id ? (<div className="space-y-2"><Textarea value={editingNote.content} onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })} className="min-h-[80px]" /><div className="flex gap-2"><Button size="sm" onClick={handleSaveEditNote} className="gap-1"><Check className="h-3 w-3" /> Salvar</Button><Button size="sm" variant="outline" onClick={() => setEditingNote(null)} className="gap-1"><X className="h-3 w-3" /> Cancelar</Button></div></div>) : (<><div className="flex items-start gap-3 mb-3"><Checkbox checked={note.completed || false} onCheckedChange={() => handleToggleCompletedNote(note)} className="mt-1" /><p className={`flex-1 text-sm leading-relaxed ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p></div><div className="flex items-center justify-between text-xs text-muted-foreground"><div className="flex flex-col gap-1"><span className="font-semibold text-primary">{users.find(u => u.id === note.userId)?.username || 'Usuário desconhecido'}</span><span>{note.category}</span><span>{formatDistanceToNow(new Date(note.updatedAt), { addSuffix: true, locale: ptBR })}</span></div><div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><span className={`px-2 py-0.5 font-semibold rounded-full ${ note.completed ? 'bg-green-500/20 text-green-700' : 'bg-red-500/20 text-red-700' }`}>{note.completed ? 'Concluído' : 'Pendente'}</span><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleStartEditNote(note)}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteNote(note.id)}><Trash2 className="h-4 w-4" /></Button></div></div></>)}
-                </div>)))
+                {filteredNotes.length > 0 ? (filteredNotes.map(note => (
+                  <div key={note.id} className="bg-secondary/30 border border-border rounded p-4">
+                    <p className={`text-sm leading-relaxed mb-3 ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-primary">{users.find(u => u.id === note.userId)?.username || 'Usuário desconhecido'}</span>
+                            <span>{note.category}</span>
+                            <span>{formatDistanceToNow(new Date(note.updatedAt))}</span>
+                        </div>
+                        <span className={`px-2 py-0.5 font-semibold rounded-full ${ note.completed ? 'bg-green-500/20 text-green-700' : 'bg-red-500/20 text-red-700' }`}>
+                            {note.completed ? 'Concluído' : 'Pendente'}
+                        </span>
+                    </div>
+                  </div>
+                )))
                 : ( <p className="text-center text-muted-foreground py-12">Nenhuma anotação encontrada para os filtros selecionados.</p> )}
             </div>
         </div>

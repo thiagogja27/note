@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserTasks } from "@/components/user-tasks";
+import { RadarSummary } from "@/components/RadarSummary";
 import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Download } from "lucide-react";
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
@@ -81,12 +82,12 @@ export default function CCOPage() {
 
   const handleExport = () => {
     if (storageLogs.length === 0) {
-      toast({ title: "Nenhum dado para exportar", description: "O histórico de alterações está vazio.", variant: "destructive" });
+      toast({ title: "Nenhum dado para exportar", variant: "destructive" });
       return;
     }
     const today = new Date().toISOString().split('T')[0];
     exportStorageLogsToExcel(storageLogs, `historico_estocagem_${today}`);
-    toast({ title: "Exportação Concluída", description: "O ficheiro Excel foi descarregado." });
+    toast({ title: "Exportação Concluída" });
   };
 
   const handleLogout = async () => {
@@ -108,28 +109,34 @@ export default function CCOPage() {
     return Object.entries(changes).filter(([, value]) => value).map(([key, value]) => `${key.replace('teg', 'TEG ').replace('teag', 'TEAG ').replace('Road', 'Rod.').replace('Railway', 'Ferr.').replace('Moega', 'M.')}: ${value}`).join(" | ") || "N/A";
   };
   
+  // Função unificada para adicionar ou atualizar notas (CCO e RADAR)
   const handleAddOrUpdateNote = async (category: Category | 'RADAR', content: string, id?: string) => {
     if (!content.trim() || !currentUser) return;
 
     try {
       if (id) {
+        // Atualiza a nota existente
         await updateNote(id, { content }, currentUser.username, currentUser.department);
         toast({ title: "Item atualizado!" });
       } else {
+        // Adiciona uma nova nota
         await addNote({ title: content.substring(0,30), content, category, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department });
         toast({ title: `Adicionado em ${category}!` });
       }
+      // Limpa os campos de input correspondentes
       if (category === 'RADAR') setNewRadarInput("");
       else setNewNoteInputs(prev => ({ ...prev, [category]: "" }));
-      setEditingNote(null);
+      setEditingNote(null); // Sai do modo de edição
     } catch (error) {
       toast({ title: "Erro ao salvar item", variant: "destructive" });
     }
   };
 
+  // CORREÇÃO: Função de apagar agora passa os dados do usuário
   const handleDelete = async (id: string) => {
+    if (!currentUser) return;
     try {
-      await deleteNote(id);
+      await deleteNote(id, currentUser.username, currentUser.department);
       toast({ title: "Item removido" });
     } catch (error) {
       toast({ title: "Erro ao remover item", variant: "destructive" });
@@ -143,6 +150,10 @@ export default function CCOPage() {
       } catch (error) {
           toast({ title: "Erro ao marcar item", variant: "destructive" });
       }
+  }
+  
+  const handleStartEdit = (note: Note) => {
+      setEditingNote({ id: note.id, content: note.content });
   }
 
   if (loading) {
@@ -245,6 +256,10 @@ export default function CCOPage() {
 
         {showTarefas && currentUser && <UserTasks currentUser={currentUser} />}
         
+        <div className="my-6">
+            <RadarSummary radarNotes={radarNotes} />
+        </div>
+
         <div className="bg-card border-2 border-primary rounded-lg p-6 my-6">
           <h2 className="text-xl font-semibold mb-3 text-primary">RADAR - Área Compartilhada</h2>
           <div className="flex gap-2 mb-4">
@@ -257,6 +272,7 @@ export default function CCOPage() {
                 <p className="text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(note.createdAt)}</span>
+                  {/* Botões de editar/apagar no RADAR permanecem como estavam */}
                   <div className="opacity-0 group-hover:opacity-100 flex gap-1">
                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -276,17 +292,37 @@ export default function CCOPage() {
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {notes.filter(n => n.category === category).map(note => (
-                  <div key={note.id} className="group bg-secondary/50 p-3 rounded">
-                    <div className="flex items-start gap-3 mb-2">
-                        <Checkbox checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
-                        <p className={`text-sm flex-1 ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p>
-                    </div>
-                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{formatDistanceToNow(note.createdAt)}</span>
-                        <div className="opacity-0 group-hover:opacity-100 flex gap-1">
-                           <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
+                    <div key={note.id} className="group bg-secondary/50 p-3 rounded">
+                    {editingNote?.id === note.id ? (
+                      // MODO DE EDIÇÃO
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editingNote.content}
+                          onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
+                          className="min-h-[60px]"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleAddOrUpdateNote(category, editingNote.content, note.id)}>Salvar</Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingNote(null)}>Cancelar</Button>
                         </div>
-                     </div>
+                      </div>
+                    ) : (
+                      // MODO DE VISUALIZAÇÃO
+                      <>
+                        <div className="flex items-start gap-3 mb-2">
+                          <Checkbox checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
+                          <p className={`text-sm flex-1 ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{formatDistanceToNow(note.createdAt)}</span>
+                          {/* CORREÇÃO: Botões de Editar e Apagar adicionados */}
+                          <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleStartEdit(note)}><Pencil className="h-3 w-3" /></Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

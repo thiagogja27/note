@@ -33,6 +33,7 @@ import { announceStorageChange, announceRadarMessage, setVoiceEnabled, isVoiceEn
 import { PrivateChat } from "@/components/private-chat"
 import { UserTasks } from "@/components/user-tasks"
 import { InformacoesBalancasTable } from "@/components/informacoes-balancas-table"
+import { RadarSummary } from "@/components/RadarSummary" // <-- IMPORTADO
 
 export default function NotesApp() {
   const router = useRouter()
@@ -583,6 +584,11 @@ export default function NotesApp() {
             <UserTasks currentUser={currentUser} />
           </div>
         )}
+        
+        {/* -- Bloco de Resumo da IA -- */}
+        <div className="mb-6">
+            <RadarSummary radarNotes={radarNotes} />
+        </div>
 
         {renderSpecialSection(
             "RADAR",
@@ -664,4 +670,3 @@ export default function NotesApp() {
     </div>
   )
 }
-
