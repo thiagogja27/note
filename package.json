@@ -42,7 +42,7 @@
     "firebase": "latest",
     "geist": "1.5.1",
     "lucide-react": "^0.454.0",
-    "next": "15.5.4",
+    "next": "16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.54.2",
