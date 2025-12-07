@@ -1,5 +1,5 @@
 {
-  "/cco/page": "app/cco/page.js",
+  "/api/summarize-notes/route": "app/api/summarize-notes/route.js",
   "/page": "app/page.js",
-  "/supervisor/page": "app/supervisor/page.js"
+  "/cco/page": "app/cco/page.js"
 }

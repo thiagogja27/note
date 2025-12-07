@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -190,30 +191,30 @@ export default function CCOPage() {
                         <h3 className="text-lg font-semibold">Lado TEG</h3>
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombadores 01 e 06:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRoad", v)} value={storageSelection?.tegRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem></SelectContent></Select>
+                            <Select onValueChange={(v) => handleStorageChange("tegRoad", v)} value={storageSelection?.tegRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombador 07:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRoadTombador", v)} value={storageSelection?.tegRoadTombador || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem></SelectContent></Select>
+                            <Select onValueChange={(v) => handleStorageChange("tegRoadTombador", v)} value={storageSelection?.tegRoadTombador || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 01:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega01", v)} value={storageSelection?.tegRailwayMoega01 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem></SelectContent></Select>
+                            <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega01", v)} value={storageSelection?.tegRailwayMoega01 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 02:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega02", v)} value={storageSelection?.tegRailwayMoega02 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem></SelectContent></Select>
+                            <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega02", v)} value={storageSelection?.tegRailwayMoega02 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                         </div>
                     </div>
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold">Lado TEAG</h3>
                         <div className="space-y-1.5">
                            <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
-                           <Select onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem></SelectContent></Select>
+                           <Select onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia:</label>
-                            <Select onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem></SelectContent></Select>
+                            <Select onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                         </div>
                     </div>
                 </div>

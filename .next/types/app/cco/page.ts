@@ -1,4 +1,4 @@
-// File: /home/user/note/app/cco/page.tsx
+// File: /home/user/note/note/app/cco/page.tsx
 import * as entry from '../../../../app/cco/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
