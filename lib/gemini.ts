@@ -35,7 +35,6 @@ export async function generateNotesSummary(notes: Note[]): Promise<string> {
       temperature: 0.5,
       topK: 1,
       topP: 1,
-      // CORREÇÃO DEFINITIVA: Aumentando o limite para 4096 para garantir margem de segurança.
       maxOutputTokens: 4096,
     }
 
@@ -59,15 +58,16 @@ export async function generateNotesSummary(notes: Note[]): Promise<string> {
       const reason = response.promptFeedback?.blockReason
       console.error("[v0] A API do Gemini retornou uma resposta vazia. Motivo do bloqueio:", reason)
       console.error("[v0] Resposta completa da API:", JSON.stringify(response, null, 2))
-      // Retorna uma mensagem de erro mais amigável para o usuário final.
       return `A IA não pôde gerar um resumo. Motivo: ${reason || 'Limite de processamento excedido'}.`
     }
 
     console.log(`[v0] Resumo gerado com sucesso.`)
     return summary
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(`[v0] Erro ao chamar a API do Gemini:`, error)
-    throw new Error("Falha ao comunicar com a API do Gemini. Verifique o log do servidor.")
+    // MODIFICADO: Em vez de um erro genérico, vamos propagar a mensagem de erro original.
+    // Isso enviará a causa real para o frontend.
+    throw new Error(error.message || "Falha ao comunicar com a API do Gemini. Causa desconhecida.")
   }
 }

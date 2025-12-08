@@ -19,7 +19,7 @@ import {
 } from "@/lib/realtime";
 import { exportStorageLogsToExcel } from "@/lib/export";
 import type { Note, Category } from "@/types/note";
-import type { StorageSelection, StorageLog } from "@/types/storage";
+import type { StorageLog } from "@/types/storage";
 import type { User } from "@/types/user";
 import { RADAR_CATEGORY } from "@/types/note";
 import { formatDistanceToNow } from "@/lib/format-date";
@@ -47,8 +47,10 @@ export default function CCOPage() {
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [radarNotes, setRadarNotes] = useState<Note[]>([]);
-  const [storageSelection, setStorageSelection] = useState<StorageSelection | null>(null);
+  const [storageSelection, setStorageSelection] = useState<any | null>(null);
   const [storageLogs, setStorageLogs] = useState<StorageLog[]>([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [newNoteInputs, setNewNoteInputs] = useState<Record<Category, string>>({ Emails: "", "Incluir no relatório de balança": "", "Tarefas pendentes": "" });
   const [newRadarInput, setNewRadarInput] = useState("");
@@ -83,12 +85,31 @@ export default function CCOPage() {
 
   const handleExport = () => {
     if (storageLogs.length === 0) {
-      toast({ title: "Nenhum dado para exportar", variant: "destructive" });
-      return;
+        toast({ title: "Nenhum dado para exportar", variant: "destructive" });
+        return;
     }
-    const today = new Date().toISOString().split('T')[0];
-    exportStorageLogsToExcel(storageLogs, `historico_estocagem_${today}`);
-    toast({ title: "Exportação Concluída" });
+
+    const filteredLogs = storageLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        // CORREÇÃO: Trata a data de entrada como hora local para evitar problemas de fuso horário.
+        // Adiciona T00:00:00 para garantir que a data de início seja no começo do dia selecionado.
+        const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+        // Adiciona T23:59:59 para garantir que a data de fim cubra o dia inteiro selecionado.
+        const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
+
+        if (start && logDate < start) return false;
+        if (end && logDate > end) return false;
+        return true;
+    });
+
+    if (filteredLogs.length === 0) {
+        toast({ title: "Nenhum registro no período selecionado", variant: "destructive" });
+        return;
+    }
+
+    const fileName = `Historico_${startDate || 'inicio'}_a_${endDate || 'hoje'}`;
+    exportStorageLogsToExcel(filteredLogs, fileName);
+    toast({ title: "Exportação Concluída", description: `${filteredLogs.length} registros exportados.` });
   };
 
   const handleLogout = async () => {
@@ -96,7 +117,7 @@ export default function CCOPage() {
     router.push("/");
   };
 
-  const handleStorageChange = async (field: keyof Omit<StorageSelection, 'id' | 'updatedAt' | 'updatedBy' | 'updatedByDepartment'>, value: string) => {
+  const handleStorageChange = async (field: keyof Omit<any, 'id' | 'updatedAt' | 'updatedBy' | 'updatedByDepartment'>, value: string) => {
     if (!currentUser || !storageSelection) return;
     const newSelection = { ...storageSelection, [field]: value };
     await saveStorageSelection({ ...newSelection, updatedBy: currentUser.username, updatedByDepartment: currentUser.department });
@@ -110,30 +131,25 @@ export default function CCOPage() {
     return Object.entries(changes).filter(([, value]) => value).map(([key, value]) => `${key.replace('teg', 'TEG ').replace('teag', 'TEAG ').replace('Road', 'Rod.').replace('Railway', 'Ferr.').replace('Moega', 'M.')}: ${value}`).join(" | ") || "N/A";
   };
   
-  // Função unificada para adicionar ou atualizar notas (CCO e RADAR)
   const handleAddOrUpdateNote = async (category: Category | 'RADAR', content: string, id?: string) => {
     if (!content.trim() || !currentUser) return;
 
     try {
       if (id) {
-        // Atualiza a nota existente
         await updateNote(id, { content }, currentUser.username, currentUser.department);
         toast({ title: "Item atualizado!" });
       } else {
-        // Adiciona uma nova nota
         await addNote({ title: content.substring(0,30), content, category, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department });
         toast({ title: `Adicionado em ${category}!` });
       }
-      // Limpa os campos de input correspondentes
       if (category === 'RADAR') setNewRadarInput("");
       else setNewNoteInputs(prev => ({ ...prev, [category]: "" }));
-      setEditingNote(null); // Sai do modo de edição
+      setEditingNote(null); 
     } catch (error) {
       toast({ title: "Erro ao salvar item", variant: "destructive" });
     }
   };
 
-  // CORREÇÃO: Função de apagar agora passa os dados do usuário
   const handleDelete = async (id: string) => {
     if (!currentUser) return;
     try {
@@ -221,12 +237,17 @@ export default function CCOPage() {
             </div>
 
             <div className="bg-card border rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <h2 className="text-xl font-semibold text-primary">Histórico de Alterações de Estocagem</h2>
-                <Button onClick={handleExport} disabled={storageLogs.length === 0} variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Exportar para Excel
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-auto" />
+                    <span className="text-muted-foreground">até</span>
+                    <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-auto" />
+                    <Button onClick={handleExport} disabled={storageLogs.length === 0} variant="outline" size="sm" className="gap-2">
+                      <Download className="h-4 w-4" />
+                      Exportar Excel
+                    </Button>
+                </div>
               </div>
               <div className="overflow-x-auto relative max-h-[500px]">
                 <table className="w-full text-sm text-left">
@@ -273,7 +294,6 @@ export default function CCOPage() {
                 <p className="text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(note.createdAt)}</span>
-                  {/* Botões de editar/apagar no RADAR permanecem como estavam */}
                   <div className="opacity-0 group-hover:opacity-100 flex gap-1">
                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -295,7 +315,6 @@ export default function CCOPage() {
                 {notes.filter(n => n.category === category).map(note => (
                     <div key={note.id} className="group bg-secondary/50 p-3 rounded">
                     {editingNote?.id === note.id ? (
-                      // MODO DE EDIÇÃO
                       <div className="space-y-2">
                         <Textarea
                           value={editingNote.content}
@@ -308,7 +327,6 @@ export default function CCOPage() {
                         </div>
                       </div>
                     ) : (
-                      // MODO DE VISUALIZAÇÃO
                       <>
                         <div className="flex items-start gap-3 mb-2">
                           <Checkbox checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
@@ -316,7 +334,6 @@ export default function CCOPage() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{formatDistanceToNow(note.createdAt)}</span>
-                          {/* CORREÇÃO: Botões de Editar e Apagar adicionados */}
                           <div className="opacity-0 group-hover:opacity-100 flex gap-1">
                             <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleStartEdit(note)}><Pencil className="h-3 w-3" /></Button>
                             <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
