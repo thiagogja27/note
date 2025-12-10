@@ -530,41 +530,41 @@ export default function NotesApp() {
               </div>
             )}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Lado TEG</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Rodovia - Tombadores 01 e 06:</label>
-                    <Input value={tegRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Rodovia - Tombador 07:</label>
-                    <Input value={tegRoadTombador} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Ferrovia - Moega 01:</label>
-                    <Input value={tegRailwayMoega01} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Ferrovia - Moega 02:</label>
-                    <Input value={tegRailwayMoega02} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Lado TEAG</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Rodovia:</label>
-                    <Input value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Ferrovia:</label>
-                    <Input value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
-                  </div>
-                </div>
-              </div>
-            </div>
+  <div className="space-y-4">
+    <h3 className="text-lg font-semibold">Lado TEG</h3>
+    <div className="space-y-3">
+      <div>
+        <label className="text-sm font-medium mb-2 block">Rodovia - Tombadores 01 e 06:</label>
+        <Input id="teg-road" value={tegRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
+      </div>
+      <div>
+        <label className="text-sm font-medium mb-2 block">Rodovia - Tombador 07:</label>
+        <Input id="teg-road-tombador" value={tegRoadTombador} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
+      </div>
+      <div>
+        <label className="text-sm font-medium mb-2 block">Ferrovia - Moega 01:</label>
+        <Input id="teg-railway-moega-01" value={tegRailwayMoega01} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
+      </div>
+      <div>
+        <label className="text-sm font-medium mb-2 block">Ferrovia - Moega 02:</label>
+        <Input id="teg-railway-moega-02" value={tegRailwayMoega02} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
+      </div>
+    </div>
+  </div>
+  <div className="space-y-4">
+    <h3 className="text-lg font-semibold">Lado TEAG</h3>
+    <div className="space-y-3">
+      <div>
+        <label className="text-sm font-medium mb-2 block">Rodovia:</label>
+        <Input id="teag-road" value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
+      </div>
+      <div>
+        <label className="text-sm font-medium mb-2 block">Ferrovia:</label>
+        <Input id="teag-railway" value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" />
+      </div>
+    </div>
+  </div>
+</div>
           </div>
         )}
 

@@ -3,7 +3,7 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai"
 import type { Note } from "@/types/note"
 
-const MODEL_NAME = "gemini-pro-latest"
+const MODEL_NAME = "gemini-2.5-flash-lite"
 
 function getApiKey(): string {
   const apiKey = process.env.GEMINI_API_KEY

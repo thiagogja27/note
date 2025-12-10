@@ -1,4 +1,0 @@
-{
-  "/api/summarize-notes/route": "app/api/summarize-notes/route.js",
-  "/page": "app/page.js"
-}
