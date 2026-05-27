@@ -1,36 +1,33 @@
 "use client"
 
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword as firebaseSignIn, onAuthStateChanged } from "firebase/auth";
 import type { User, Department } from "@/types/user"
+import { getFirebaseConfig } from "./firebase-config"; // Assumindo que a configuração está em um arquivo separado
 
-const AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1"
+// Inicializa o Firebase
+const firebaseApp = initializeApp(getFirebaseConfig());
+const auth = getAuth(firebaseApp);
 
-function getApiKey(): string {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-  if (!apiKey) {
-    throw new Error("NEXT_PUBLIC_FIREBASE_API_KEY não está configurada")
-  }
-  return apiKey
-}
 
 export interface FirebaseAuthUser {
   uid: string
-  email: string
-  displayName?: string
+  email: string | null
+  displayName?: string | null
   idToken: string
   refreshToken: string
-  expiresIn: string
 }
 
-// Mapeia códigos de erro do Firebase para mensagens amigáveis em português.
 function mapFirebaseError(errorCode: string): string {
   switch (errorCode) {
-    case "INVALID_PASSWORD":
+    case "auth/invalid-password":
+    case "auth/wrong-password":
       return "A senha fornecida está incorreta."
-    case "EMAIL_NOT_FOUND":
+    case "auth/user-not-found":
       return "Nenhum usuário encontrado com este endereço de email."
-    case "INVALID_EMAIL":
+    case "auth/invalid-email":
       return "O endereço de email fornecido é inválido."
-    case "USER_DISABLED":
+    case "auth/user-disabled":
       return "A conta para este usuário foi desabilitada."
     default:
       return "Ocorreu um erro de autenticação. Verifique suas credenciais."
@@ -38,80 +35,55 @@ function mapFirebaseError(errorCode: string): string {
 }
 
 export async function signInWithEmailPassword(email: string, password: string): Promise<FirebaseAuthUser> {
-  const url = `${AUTH_BASE_URL}/accounts:signInWithPassword?key=${getApiKey()}`
+  try {
+    const userCredential = await firebaseSignIn(auth, email, password);
+    const user = userCredential.user;
+    const idToken = await user.getIdToken();
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email,
-      password,
-      returnSecureToken: true,
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    const errorMessage = data.error?.message || "UNKNOWN_ERROR"
-    console.error("[v0] Erro do Firebase Auth:", errorMessage, data)
-    throw new Error(mapFirebaseError(errorMessage))
-  }
-
-  return {
-    uid: data.localId,
-    email: data.email,
-    displayName: data.displayName,
-    idToken: data.idToken,
-    refreshToken: data.refreshToken,
-    expiresIn: data.expiresIn,
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      idToken: idToken,
+      refreshToken: user.refreshToken,
+    }
+  } catch (error: any) {
+    console.error("[v1] Erro do Firebase Auth SDK:", error.code, error.message);
+    throw new Error(mapFirebaseError(error.code));
   }
 }
 
 export async function getUserInfo(idToken: string): Promise<FirebaseAuthUser | null> {
-  try {
-    const url = `${AUTH_BASE_URL}/accounts:lookup?key=${getApiKey()}`
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        idToken,
-      }),
-    })
-
-    if (!response.ok) {
-      return null
-    }
-
-    const data = await response.json()
-    const users = data.users || []
-
-    if (users.length === 0) {
-      return null
-    }
-
-    const user = users[0]
-
-    return {
-      uid: user.localId,
-      email: user.email,
-      displayName: user.displayName,
-      idToken,
-      refreshToken: "",
-      expiresIn: "",
-    }
-  } catch (error) {
-    console.error("[v0] Erro ao buscar informações do usuário:", error)
-    return null
-  }
+    // Esta função pode precisar ser ajustada ou removida, 
+    // já que o estado de auth agora é gerenciado pelo SDK
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            unsubscribe(); 
+            if (user) {
+                const currentIdToken = await user.getIdToken();
+                if (currentIdToken === idToken) {
+                    resolve({
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName,
+                        idToken: currentIdToken,
+                        refreshToken: user.refreshToken,
+                    });
+                } else {
+                    resolve(null); // O token não corresponde ao usuário atual
+                }
+            } else {
+                resolve(null);
+            }
+        });
+    });
 }
 
+
 export function convertToAppUser(firebaseUser: FirebaseAuthUser, department: Department): User {
+  if (!firebaseUser.email) {
+    throw new Error("O usuário do Firebase não tem um email.");
+  }
   return {
     id: firebaseUser.uid,
     username: firebaseUser.email,
@@ -123,42 +95,44 @@ export function convertToAppUser(firebaseUser: FirebaseAuthUser, department: Dep
 
 export function saveAuthSession(firebaseUser: FirebaseAuthUser, department: Department): void {
   try {
-    localStorage.setItem("firebaseAuthToken", firebaseUser.idToken)
-    localStorage.setItem("firebaseRefreshToken", firebaseUser.refreshToken)
-    localStorage.setItem("firebaseUserId", firebaseUser.uid)
-    localStorage.setItem("firebaseUserEmail", firebaseUser.email)
-    localStorage.setItem("userDepartment", department)
+    if(firebaseUser.email) {
+      localStorage.setItem("firebaseAuthToken", firebaseUser.idToken)
+      localStorage.setItem("firebaseRefreshToken", firebaseUser.refreshToken)
+      localStorage.setItem("firebaseUserId", firebaseUser.uid)
+      localStorage.setItem("firebaseUserEmail", firebaseUser.email)
+      localStorage.setItem("userDepartment", department)
+    }
   } catch (error) {
-    console.error("[v0] Erro ao salvar sessão:", error)
+    console.error("[v1] Erro ao salvar sessão:", error)
   }
 }
 
 export async function loadAuthSession(): Promise<User | null> {
-  try {
-    const idToken = localStorage.getItem("firebaseAuthToken")
-    const department = (localStorage.getItem("userDepartment") as Department) || "balanca"
-
-    if (!idToken) {
-      return null
-    }
-
-    const firebaseUser = await getUserInfo(idToken)
-
-    if (!firebaseUser) {
-      clearAuthSession()
-      return null
-    }
-
-    return convertToAppUser(firebaseUser, department)
-  } catch (error) {
-    console.error("[v0] Erro ao carregar sessão:", error)
-    clearAuthSession()
-    return null
-  }
+  return new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe();
+      if (user) {
+        const department = (localStorage.getItem("userDepartment") as Department) || "balanca";
+        const idToken = await user.getIdToken();
+        const firebaseUser: FirebaseAuthUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          idToken: idToken,
+          refreshToken: user.refreshToken,
+        };
+        resolve(convertToAppUser(firebaseUser, department));
+      } else {
+        resolve(null);
+      }
+    });
+  });
 }
+
 
 export function clearAuthSession(): void {
   try {
+    auth.signOut(); // Usa o método do SDK para deslogar
     localStorage.removeItem("firebaseAuthToken")
     localStorage.removeItem("firebaseRefreshToken")
     localStorage.removeItem("firebaseUserId")
@@ -166,6 +140,7 @@ export function clearAuthSession(): void {
     localStorage.removeItem("currentUser")
     localStorage.removeItem("userDepartment")
   } catch (error) {
-    console.error("[v0] Erro ao limpar sessão:", error)
+    console.error("[v1] Erro ao limpar sessão:", error)
   }
 }
+
