@@ -1,6 +1,7 @@
-"use client"
+'use client'
 
 import { useState, useEffect, useRef } from "react"
+import { useChat } from "@/contexts/chat-context"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { X, Send, UserPlus, Users, MessageCircle } from "lucide-react"
@@ -15,14 +16,15 @@ import {
   getAllUsers,
 } from "@/lib/private-messages"
 import { formatDistanceToNow } from "@/lib/format-date"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
+import { ToastAction } from "@/components/ui/toast"
 
 interface PrivateChatProps {
   currentUser: User
-  onClose: () => void
 }
 
-export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
+export function PrivateChat({ currentUser }: PrivateChatProps) {
+  const { isChatOpen, closeChat, selectedUser, openChat } = useChat()
   const [messages, setMessages] = useState<PrivateMessage[]>([])
   const [contacts, setContacts] = useState<PrivateChatContact[]>([])
   const [selectedContact, setSelectedContact] = useState<PrivateChatContact | null>(null)
@@ -30,6 +32,7 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
   const [showAddContact, setShowAddContact] = useState(false)
   const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; username: string; department: string }>>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const prevMessagesRef = useRef<PrivateMessage[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -41,6 +44,37 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
       unsubscribeContacts()
     }
   }, [currentUser.id])
+
+  useEffect(() => {
+    if (prevMessagesRef.current.length > 0) {
+      const newMessages = messages.filter((msg) => !prevMessagesRef.current.some((prev) => prev.id === msg.id))
+      const incoming = newMessages.find((msg) => msg.recipientId === currentUser.id)
+
+      if (incoming) {
+        toast({
+          title: `Nova mensagem de ${incoming.senderName}`,
+          description: incoming.content.substring(0, 40) + "...",
+          action: (
+            <ToastAction altText="Abrir Chat" onClick={() => openChat(incoming.senderId)}>
+              Abrir Chat
+            </ToastAction>
+          ),
+        })
+      }
+    }
+    prevMessagesRef.current = messages
+  }, [messages, currentUser.id, openChat, toast])
+
+  useEffect(() => {
+    if (selectedUser) {
+      const contact = contacts.find((c) => c.userId === selectedUser)
+      if (contact) {
+        setSelectedContact(contact)
+      }
+    } else {
+      setSelectedContact(null)
+    }
+  }, [selectedUser, contacts])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -71,10 +105,6 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
         newMessage.trim(),
       )
       setNewMessage("")
-      toast({
-        title: "Mensagem enviada",
-        description: `Mensagem enviada para ${selectedContact.username}`,
-      })
     } catch (error) {
       toast({
         title: "Erro ao enviar mensagem",
@@ -88,6 +118,7 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
     try {
       await addPrivateChatContact(currentUser.id, user.id, user.username, user.department)
       setShowAddContact(false)
+      openChat(user.id)
       toast({
         title: "Contato adicionado",
         description: `${user.username} foi adicionado aos seus contatos`,
@@ -136,6 +167,14 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
       .length
   }
 
+  const handleSelectContact = (contact: PrivateChatContact) => {
+    openChat(contact.userId)
+  }
+
+  if (!isChatOpen) {
+    return null
+  }
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-4xl h-[600px] flex flex-col">
@@ -144,7 +183,7 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
             <MessageCircle className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">Chat Privado</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={closeChat}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -176,7 +215,7 @@ export function PrivateChat({ currentUser, onClose }: PrivateChatProps) {
                     return (
                       <button
                         key={contact.userId}
-                        onClick={() => setSelectedContact(contact)}
+                        onClick={() => handleSelectContact(contact)}
                         className={`w-full text-left p-3 rounded hover:bg-secondary/50 transition-colors ${
                           selectedContact?.userId === contact.userId ? "bg-secondary" : ""
                         }`}

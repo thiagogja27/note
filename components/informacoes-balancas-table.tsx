@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 
 const initialData = [
   { id: "BALANÇA01", usuario: "PS959976", maquina: "BRGUAR14300W" },

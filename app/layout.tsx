@@ -4,6 +4,8 @@ import { Inter } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 import { DatabaseStatusBanner } from "@/components/database-status-banner"
+import { ChatProvider } from "@/contexts/chat-context"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,10 +27,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Suspense fallback={<div>Loading...</div>}>
-          {children}
-          <DatabaseStatusBanner />
-        </Suspense>
+        <ChatProvider>
+          <Suspense fallback={<div>Loading...</div>}>
+            {children}
+            <DatabaseStatusBanner />
+          </Suspense>
+          <Toaster />
+        </ChatProvider>
       </body>
     </html>
   )

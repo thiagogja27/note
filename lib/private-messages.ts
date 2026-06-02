@@ -1,5 +1,5 @@
 import { getFirebaseDatabase } from "./firebase"
-import { ref, push, set, onValue, update, get } from "firebase/database"
+import { ref, push, set, onValue, update, get, query, orderByChild, equalTo } from "firebase/database"
 import type { PrivateMessage, PrivateChatContact } from "@/types/private-message"
 
 export async function sendPrivateMessage(
@@ -22,7 +22,7 @@ export async function sendPrivateMessage(
       recipientId,
       recipientName,
       content,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(), // Salva como string ISO
       read: false,
     }
 
@@ -38,31 +38,56 @@ export function listenToPrivateMessages(userId: string, callback: (messages: Pri
     const db = getFirebaseDatabase()
     const messagesRef = ref(db, "privateMessages")
 
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
-      const data = snapshot.val()
-      if (!data) {
-        callback([])
-        return
-      }
+    const sentMessagesQuery = query(messagesRef, orderByChild('senderId'), equalTo(userId));
+    const receivedMessagesQuery = query(messagesRef, orderByChild('recipientId'), equalTo(userId));
 
-      const messages: PrivateMessage[] = Object.entries(data)
-        .map(([id, value]: [string, any]) => ({
-          id,
-          ...value,
-          createdAt: new Date(value.createdAt),
-        }))
-        .filter((msg) => msg.senderId === userId || msg.recipientId === userId)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    let sentMessages: PrivateMessage[] = [];
+    let receivedMessages: PrivateMessage[] = [];
 
-      callback(messages)
-    })
+    const mapDataToMessages = (data: any): PrivateMessage[] => {
+        return data ? Object.entries(data).map(([id, value]: [string, any]) => {
+            const createdAtDate = new Date(value.createdAt);
+            return {
+                id,
+                ...value,
+                // Fallback para data atual se a data do banco for inválida
+                createdAt: isNaN(createdAtDate.getTime()) ? new Date() : createdAtDate,
+            };
+        }) : [];
+    };
 
-    return unsubscribe
+    const combineAndSend = () => {
+      const allMessages = [...sentMessages, ...receivedMessages];
+      const uniqueMessages = Array.from(new Map(allMessages.map(m => [m.id, m])).values());
+      // Ordena pela data corretamente
+      const sortedMessages = uniqueMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      callback(sortedMessages);
+    };
+
+    const onSentValue = onValue(sentMessagesQuery, (snapshot) => {
+      sentMessages = mapDataToMessages(snapshot.val());
+      combineAndSend();
+    }, (error) => {
+        console.error("[v0] Erro ao ouvir mensagens enviadas:", error);
+    });
+
+    const onReceivedValue = onValue(receivedMessagesQuery, (snapshot) => {
+      receivedMessages = mapDataToMessages(snapshot.val());
+      combineAndSend();
+    }, (error) => {
+        console.error("[v0] Erro ao ouvir mensagens recebidas:", error);
+    });
+
+    return () => {
+      onSentValue();
+      onReceivedValue();
+    };
   } catch (error) {
     console.error("[v0] Erro ao iniciar listener de mensagens privadas:", error)
     return () => {}
   }
 }
+
 
 export async function markMessageAsRead(messageId: string): Promise<void> {
   try {

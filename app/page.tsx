@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Volume2, VolumeX, MessageCircle } from 'lucide-react'
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { formatDistanceToNow } from "@/lib/format-date"
 import { LoginForm } from "@/components/login-form"
@@ -33,10 +33,12 @@ import { announceStorageChange, announceRadarMessage, setVoiceEnabled, isVoiceEn
 import { PrivateChat } from "@/components/private-chat"
 import { UserTasks } from "@/components/user-tasks"
 import { InformacoesBalancasTable } from "@/components/informacoes-balancas-table"
-import { RadarSummary } from "@/components/RadarSummary" // <-- IMPORTADO
+import { RadarSummary } from "@/components/RadarSummary"
+import { useChat } from "@/contexts/chat-context"
 
 export default function NotesApp() {
   const router = useRouter()
+  const { openChat } = useChat()
   const [notes, setNotes] = useState<Note[]>([])
   const [radarNotes, setRadarNotes] = useState<Note[]>([])
   const [infoNotes, setInfoNotes] = useState<Note[]>([])
@@ -70,8 +72,6 @@ export default function NotesApp() {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-
-  const [showPrivateChat, setShowPrivateChat] = useState(false)
 
   const prevStorageRef = useRef<{
     tegRoad: string
@@ -478,7 +478,7 @@ export default function NotesApp() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => setShowPrivateChat(true)} title="Chat Privado">
+              <Button variant="outline" size="icon" onClick={() => openChat()} title="Chat Privado">
                 <MessageCircle className="h-4 w-4" />
               </Button>
               <Button
@@ -665,7 +665,7 @@ export default function NotesApp() {
           ))}
         </div>
       </div>
-      {showPrivateChat && <PrivateChat currentUser={currentUser!} onClose={() => setShowPrivateChat(false)} />}
+      {currentUser && <PrivateChat currentUser={currentUser} />}
       <Toaster />
     </div>
   )

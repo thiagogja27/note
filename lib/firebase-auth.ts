@@ -1,12 +1,11 @@
 "use client"
 
-import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword as firebaseSignIn, onAuthStateChanged } from "firebase/auth";
 import type { User, Department } from "@/types/user"
-import { getFirebaseConfig } from "./firebase-config"; // Assumindo que a configuração está em um arquivo separado
+import { getFirebaseApp } from "./firebase"; // Importa a função singleton
 
-// Inicializa o Firebase
-const firebaseApp = initializeApp(getFirebaseConfig());
+// Obtém a instância única do Firebase e inicializa o Auth
+const firebaseApp = getFirebaseApp();
 const auth = getAuth(firebaseApp);
 
 
@@ -143,4 +142,3 @@ export function clearAuthSession(): void {
     console.error("[v1] Erro ao limpar sessão:", error)
   }
 }
-

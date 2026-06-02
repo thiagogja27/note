@@ -6,7 +6,7 @@ import type { Task, TaskPriority, TaskStatus } from "@/types/task"
 import type { User } from "@/types/user"
 import { Button } from "@/components/ui/button"
 import { Clock, AlertCircle, CheckCircle2, PlayCircle } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { formatDistanceToNow } from "@/lib/format-date"
 
 interface UserTasksProps {
