@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users } from 'lucide-react'
 import { formatDistanceToNow } from "@/lib/format-date"
@@ -319,7 +319,8 @@ export default function SupervisorPage() {
                     </div>
                   </div>
                 )))
-                : ( <p className="text-center text-muted-foreground py-12">Nenhuma anotação encontrada para os filtros selecionados.</p> )}
+                : ( <p className="text-center text-muted-foreground py-12">Nenhuma anotação encontrada para os filtros selecionados.</p> )
+                }
             </div>
         </div>
       </div>
