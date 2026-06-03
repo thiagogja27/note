@@ -20,7 +20,7 @@ import type { User } from "@/types/user"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { BookOpen, Plus, Pencil, Trash2, X, Check, Volume2, VolumeX, MessageCircle } from 'lucide-react'
+import { BookOpen, Plus, Pencil, Trash2, X, Check, Volume2, VolumeX, MessageCircle, Search } from 'lucide-react'
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { formatDistanceToNow } from "@/lib/format-date"
@@ -57,6 +57,7 @@ export default function NotesApp() {
   const { toast } = useToast()
 
   const [voiceNotificationsEnabled, setVoiceNotificationsEnabled] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const [tegRoad, setTegRoad] = useState("")
   const [tegRoadTombador, setTegRoadTombador] = useState("")
@@ -248,8 +249,24 @@ export default function NotesApp() {
           </TabsList>
 
           <TabsContent value="notes" className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {CATEGORIES.map((category) => (
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar em Minhas Anotações..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {CATEGORIES.map((category) => {
+                const filteredCategoryNotes = notes
+                  .filter(n => n.category === category)
+                  .filter(note => 
+                    note.content.toLowerCase().includes(searchQuery.toLowerCase())
+                  );
+
+                return (
                   <div key={category} className="bg-card border border-border rounded-lg p-4">
                     <h2 className="text-lg font-semibold mb-3 text-primary">{category}</h2>
                     <div className="flex gap-2 mb-4">
@@ -257,7 +274,7 @@ export default function NotesApp() {
                       <Button onClick={() => handleAddNote(category, newNoteInputs[category])} size="icon"><Plus className="h-4 w-4" /></Button>
                     </div>
                     <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                      {notes.filter(n => n.category === category).map((note) => (
+                      {filteredCategoryNotes.map((note) => (
                         <div key={note.id} className="group bg-secondary/30 border border-border rounded p-3 hover:border-primary/50 transition-colors">
                           {editingNote?.id === note.id ? (
                             <div className="space-y-2"><Textarea value={editingNote.content} onChange={(e) => setEditingNote({ ...editingNote, title: '', content: e.target.value })} className="min-h-[60px]" /><div className="flex gap-2"><Button size="sm" onClick={handleSaveEdit} className="gap-1"><Check className="h-3 w-3" />Salvar</Button><Button size="sm" variant="outline" onClick={() => setEditingNote(null)} className="gap-1"><X className="h-3 w-3" />Cancelar</Button></div></div>
@@ -266,10 +283,11 @@ export default function NotesApp() {
                           )}
                         </div>
                       ))}
-                      {notes.filter(n => n.category === category).length === 0 && (<p className="text-sm text-muted-foreground text-center py-8">Nenhum item ainda</p>)}
+                      {filteredCategoryNotes.length === 0 && (<p className="text-sm text-muted-foreground text-center py-8">{searchQuery ? "Nenhum resultado encontrado" : "Nenhum item ainda"}</p>)}
                     </div>
                   </div>
-                ))}
+                )}
+              )}
             </div>
           </TabsContent>
 
