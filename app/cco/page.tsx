@@ -33,6 +33,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserTasks } from "@/components/user-tasks";
 import { RadarSummary } from "@/components/RadarSummary";
 import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 
@@ -42,8 +43,6 @@ export default function CCOPage() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showEstocagem, setShowEstocagem] = useState(true);
-  const [showTarefas, setShowTarefas] = useState(false);
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [radarNotes, setRadarNotes] = useState<Note[]>([]);
@@ -91,10 +90,7 @@ export default function CCOPage() {
 
     const filteredLogs = storageLogs.filter(log => {
         const logDate = new Date(log.timestamp);
-        // CORREÇÃO: Trata a data de entrada como hora local para evitar problemas de fuso horário.
-        // Adiciona T00:00:00 para garantir que a data de início seja no começo do dia selecionado.
         const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-        // Adiciona T23:59:59 para garantir que a data de fim cubra o dia inteiro selecionado.
         const end = endDate ? new Date(`${endDate}T23:59:59`) : null;
 
         if (start && logDate < start) return false;
@@ -193,160 +189,171 @@ export default function CCOPage() {
           </div>
         </header>
 
-        <div className="flex gap-4 mb-6">
-            <Button variant={showEstocagem ? "default" : "outline"} onClick={() => setShowEstocagem(!showEstocagem)} className="flex-1">CONTROLE DE ESTOCAGEM</Button>
-            <Button variant={showTarefas ? "default" : "outline"} onClick={() => setShowTarefas(!showTarefas)} className="flex-1">MINHAS TAREFAS</Button>
-        </div>
-
-        {showEstocagem && (
-          <div className="space-y-6">
-            <div className="bg-card border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4 text-primary">Definir Células de Estocagem</h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Lado TEG</h3>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombadores 01 e 06:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRoad", v)} value={storageSelection?.tegRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombador 07:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRoadTombador", v)} value={storageSelection?.tegRoadTombador || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 01:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega01", v)} value={storageSelection?.tegRailwayMoega01 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 02:</label>
-                            <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega02", v)} value={storageSelection?.tegRailwayMoega02 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Lado TEAG</h3>
-                        <div className="space-y-1.5">
-                           <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
-                           <Select onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Ferrovia:</label>
-                            <Select onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-card border rounded-lg p-6">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <h2 className="text-xl font-semibold text-primary">Histórico de Alterações de Estocagem</h2>
-                <div className="flex flex-wrap items-center gap-2">
-                    <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-auto" />
-                    <span className="text-muted-foreground">até</span>
-                    <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-auto" />
-                    <Button onClick={handleExport} disabled={storageLogs.length === 0} variant="outline" size="sm" className="gap-2">
-                      <Download className="h-4 w-4" />
-                      Exportar Excel
-                    </Button>
-                </div>
-              </div>
-              <div className="overflow-x-auto relative max-h-[500px]">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-muted-foreground uppercase bg-secondary sticky top-0">
-                    <tr>
-                      <th scope="col" className="px-6 py-3">Data & Hora</th>
-                      <th scope="col" className="px-6 py-3">Usuário</th>
-                      <th scope="col" className="px-6 py-3">Detalhes da Alteração</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {storageLogs.map(log => (
-                      <tr key={log.id} className="border-b hover:bg-secondary/50">
-                        <td className="px-6 py-4 font-medium whitespace-nowrap">{new Date(log.timestamp).toLocaleString("pt-BR")}</td>
-                        <td className="px-6 py-4">{log.changedBy} ({log.department.toUpperCase()})</td>
-                        <td className="px-6 py-4">{formatChanges(log.changes)}</td>
-                      </tr>
-                    ))}
-                     {storageLogs.length === 0 && (
-                        <tr><td colSpan={3} className="text-center py-8 text-muted-foreground">Nenhum registro de alteração encontrado.</td></tr>
-                     )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showTarefas && currentUser && <UserTasks currentUser={currentUser} />}
-        
         <div className="my-6">
             <RadarSummary radarNotes={radarNotes} />
         </div>
 
-        <div className="bg-card border-2 border-primary rounded-lg p-6 my-6">
-          <h2 className="text-xl font-semibold mb-3 text-primary">RADAR - Área Compartilhada</h2>
-          <div className="flex gap-2 mb-4">
-            <Input placeholder="Adicionar item importante..." value={newRadarInput} onChange={(e) => setNewRadarInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddOrUpdateNote('RADAR', newRadarInput)} />
-            <Button onClick={() => handleAddOrUpdateNote('RADAR', newRadarInput)}><Plus className="h-4 w-4" /></Button>
-          </div>
-          <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-            {radarNotes.map(note => (
-              <div key={note.id} className="group bg-primary/5 border border-primary/30 p-3 rounded">
-                <p className="text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(note.createdAt)}</span>
-                  <div className="opacity-0 group-hover:opacity-100 flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
+        <Tabs defaultValue="tasks" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="storage">Controle de Estocagem</TabsTrigger>
+            <TabsTrigger value="tasks">Minhas Tarefas</TabsTrigger>
+            <TabsTrigger value="notes">Anotações</TabsTrigger>
+            <TabsTrigger value="radar">RADAR</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="storage">
+            <div className="space-y-6 mt-6">
+              <div className="bg-card border rounded-lg p-6">
+                <h2 className="text-xl font-semibold mb-4 text-primary">Definir Células de Estocagem</h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+                      <div className="space-y-4">
+                          <h3 className="text-lg font-semibold">Lado TEG</h3>
+                          <div className="space-y-1.5">
+                              <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombadores 01 e 06:</label>
+                              <Select onValueChange={(v) => handleStorageChange("tegRoad", v)} value={storageSelection?.tegRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                          </div>
+                          <div className="space-y-1.5">
+                              <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombador 07:</label>
+                              <Select onValueChange={(v) => handleStorageChange("tegRoadTombador", v)} value={storageSelection?.tegRoadTombador || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                          </div>
+                          <div className="space-y-1.5">
+                              <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 01:</label>
+                              <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega01", v)} value={storageSelection?.tegRailwayMoega01 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                          </div>
+                          <div className="space-y-1.5">
+                              <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 02:</label>
+                              <Select onValueChange={(v) => handleStorageChange("tegRailwayMoega02", v)} value={storageSelection?.tegRailwayMoega02 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                          </div>
+                      </div>
+                      <div className="space-y-4">
+                          <h3 className="text-lg font-semibold">Lado TEAG</h3>
+                          <div className="space-y-1.5">
+                             <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
+                             <Select onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                          </div>
+                          <div className="space-y-1.5">
+                              <label className="text-sm font-medium text-muted-foreground">Ferrovia:</label>
+                              <Select onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="bg-card border rounded-lg p-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                  <h2 className="text-xl font-semibold text-primary">Histórico de Alterações de Estocagem</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                      <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-auto" />
+                      <span className="text-muted-foreground">até</span>
+                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-auto" />
+                      <Button onClick={handleExport} disabled={storageLogs.length === 0} variant="outline" size="sm" className="gap-2">
+                        <Download className="h-4 w-4" />
+                        Exportar Excel
+                      </Button>
                   </div>
                 </div>
+                <div className="overflow-x-auto relative max-h-[500px]">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground uppercase bg-secondary sticky top-0">
+                      <tr>
+                        <th scope="col" className="px-6 py-3">Data & Hora</th>
+                        <th scope="col" className="px-6 py-3">Usuário</th>
+                        <th scope="col" className="px-6 py-3">Detalhes da Alteração</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {storageLogs.map(log => (
+                        <tr key={log.id} className="border-b hover:bg-secondary/50">
+                          <td className="px-6 py-4 font-medium whitespace-nowrap">{new Date(log.timestamp).toLocaleString("pt-BR")}</td>
+                          <td className="px-6 py-4">{log.changedBy} ({log.department.toUpperCase()})</td>
+                          <td className="px-6 py-4">{formatChanges(log.changes)}</td>
+                        </tr>
+                      ))}
+                       {storageLogs.length === 0 && (
+                          <tr><td colSpan={3} className="text-center py-8 text-muted-foreground">Nenhum registro de alteração encontrado.</td></tr>
+                       )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {CCO_CATEGORIES.map((category) => (
-            <div key={category} className="bg-card border rounded-lg p-4">
-              <h2 className="text-lg font-semibold mb-3">{category}</h2>
+          <TabsContent value="tasks">
+             {currentUser && <UserTasks currentUser={currentUser} />}
+          </TabsContent>
+
+          <TabsContent value="radar">
+            <div className="bg-card border-2 border-primary rounded-lg p-6 my-6">
+              <h2 className="text-xl font-semibold mb-3 text-primary">RADAR - Área Compartilhada</h2>
               <div className="flex gap-2 mb-4">
-                <Input placeholder={`Adicionar em ${category}...`} value={newNoteInputs[category]} onChange={(e) => setNewNoteInputs(prev => ({...prev, [category]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleAddOrUpdateNote(category, newNoteInputs[category])}/>
-                <Button onClick={() => handleAddOrUpdateNote(category, newNoteInputs[category])}><Plus className="h-4 w-4" /></Button>
+                <Input placeholder="Adicionar item importante..." value={newRadarInput} onChange={(e) => setNewRadarInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddOrUpdateNote('RADAR', newRadarInput)} />
+                <Button onClick={() => handleAddOrUpdateNote('RADAR', newRadarInput)}><Plus className="h-4 w-4" /></Button>
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                {notes.filter(n => n.category === category).map(note => (
-                    <div key={note.id} className="group bg-secondary/50 p-3 rounded">
-                    {editingNote?.id === note.id ? (
-                      <div className="space-y-2">
-                        <Textarea
-                          value={editingNote.content}
-                          onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
-                          className="min-h-[60px]"
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => handleAddOrUpdateNote(category, editingNote.content, note.id)}>Salvar</Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingNote(null)}>Cancelar</Button>
-                        </div>
+                {radarNotes.map(note => (
+                  <div key={note.id} className="group bg-primary/5 border border-primary/30 p-3 rounded">
+                    <p className="text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(note.createdAt)}</span>
+                      <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start gap-3 mb-2">
-                          <Checkbox checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
-                          <p className={`text-sm flex-1 ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{formatDistanceToNow(note.createdAt)}</span>
-                          <div className="opacity-0 group-hover:opacity-100 flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleStartEdit(note)}><Pencil className="h-3 w-3" /></Button>
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
-                          </div>
-                        </div>
-                      </>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="notes">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+              {CCO_CATEGORIES.map((category) => (
+                <div key={category} className="bg-card border rounded-lg p-4">
+                  <h2 className="text-lg font-semibold mb-3">{category}</h2>
+                  <div className="flex gap-2 mb-4">
+                    <Input placeholder={`Adicionar em ${category}...`} value={newNoteInputs[category]} onChange={(e) => setNewNoteInputs(prev => ({...prev, [category]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleAddOrUpdateNote(category, newNoteInputs[category])}/>
+                    <Button onClick={() => handleAddOrUpdateNote(category, newNoteInputs[category])}><Plus className="h-4 w-4" /></Button>
+                  </div>
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                    {notes.filter(n => n.category === category).map(note => (
+                        <div key={note.id} className="group bg-secondary/50 p-3 rounded">
+                        {editingNote?.id === note.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editingNote.content}
+                              onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
+                              className="min-h-[60px]"
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => handleAddOrUpdateNote(category, editingNote.content, note.id)}>Salvar</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingNote(null)}>Cancelar</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-start gap-3 mb-2">
+                              <Checkbox checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
+                              <p className={`text-sm flex-1 ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>{formatDistanceToNow(note.createdAt)}</span>
+                              <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleStartEdit(note)}><Pencil className="h-3 w-3" /></Button>
+                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(note.id)}><Trash2 className="h-3 w-3" /></Button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+        </Tabs>
 
       </div>
       <Toaster />
