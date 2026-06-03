@@ -34,6 +34,7 @@ import { UserTasks } from "@/components/user-tasks";
 import { RadarSummary } from "@/components/RadarSummary";
 import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LiveClock } from "@/components/live-clock";
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 
@@ -178,12 +179,15 @@ export default function CCOPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-[1600px]">
-        <header className="mb-6 flex items-center justify-between">
-          <div>
+        <header className="mb-6 grid grid-cols-3 items-center">
+          <div className="col-span-1">
             <h1 className="text-2xl font-bold">CCO - Centro de Controle Operacional</h1>
             <p className="text-sm text-muted-foreground">Usuário: {currentUser.username}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="col-span-1">
+            <LiveClock />
+          </div>
+          <div className="col-span-1 flex items-center justify-end gap-2">
             <ThemeToggle />
             <Button variant="outline" onClick={handleLogout}>Sair</Button>
           </div>

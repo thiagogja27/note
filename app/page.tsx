@@ -36,6 +36,7 @@ import { InformacoesBalancasTable } from "@/components/informacoes-balancas-tabl
 import { RadarSummary } from "@/components/RadarSummary"
 import { useChat } from "@/contexts/chat-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LiveClock } from "@/components/live-clock";
 
 export default function NotesApp() {
   const router = useRouter()
@@ -217,23 +218,24 @@ export default function NotesApp() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-[1400px]">
-        <header className="mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg border border-primary/20"><BookOpen className="h-5 w-5 text-primary" /></div>
-              <div>
-                <h1 className="text-2xl font-bold">Controle de Tarefas - Balança TEG/TEAG</h1>
-                <p className="text-sm text-muted-foreground">Organize suas tarefas e informações • Usuário: {currentUser?.username || "Desconhecido"}</p>
-              </div>
+        <header className="mb-6 grid grid-cols-3 items-center">
+          <div className="col-span-1 flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20"><BookOpen className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h1 className="text-2xl font-bold">Controle de Tarefas - Balança</h1>
+              <p className="text-sm text-muted-foreground">Usuário: {currentUser?.username || "Desconhecido"}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => openChat()} title="Chat Privado"><MessageCircle className="h-4 w-4" /></Button>
-              <Button variant={voiceNotificationsEnabled ? "default" : "outline"} size="icon" onClick={handleToggleVoice} title={voiceNotificationsEnabled ? "Desativar notificações de voz" : "Ativar notificações de voz"}>
-                {voiceNotificationsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              </Button>
-              <ThemeToggle />
-              <Button variant="outline" onClick={handleLogout}>Sair</Button>
-            </div>
+          </div>
+          <div className="col-span-1">
+            <LiveClock />
+          </div>
+          <div className="col-span-1 flex items-center justify-end gap-2">
+            <Button variant="outline" size="icon" onClick={() => openChat()} title="Chat Privado"><MessageCircle className="h-4 w-4" /></Button>
+            <Button variant={voiceNotificationsEnabled ? "default" : "outline"} size="icon" onClick={handleToggleVoice} title={voiceNotificationsEnabled ? "Desativar notificações de voz" : "Ativar notificações de voz"}>
+              {voiceNotificationsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+            <ThemeToggle />
+            <Button variant="outline" onClick={handleLogout}>Sair</Button>
           </div>
         </header>
 

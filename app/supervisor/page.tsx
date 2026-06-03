@@ -22,7 +22,7 @@ import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users } from 'lucide-react
 import { formatDistanceToNow } from "@/lib/format-date"
 import { RadarSummary } from "@/components/RadarSummary"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
+import { LiveClock } from "@/components/live-clock";
 
 type ShiftWithAll = Shift | "Todos";
 
@@ -226,15 +226,18 @@ export default function SupervisorPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 max-w-[1600px]">
-        <header className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <header className="mb-6 grid grid-cols-3 items-center">
+            <div className="col-span-1 flex items-center gap-3">
                 <Users className="h-6 w-6 text-primary" />
                 <div>
                     <h1 className="text-2xl font-bold">Painel do Supervisor</h1>
                     <p className="text-sm text-muted-foreground">Bem-vindo, {currentUser.username}!</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="col-span-1">
+                <LiveClock />
+            </div>
+            <div className="col-span-1 flex items-center justify-end gap-2">
                 <ThemeToggle />
                 <Button variant="outline" onClick={handleLogout} className="gap-2"><LogOut className="h-4 w-4" /> Sair</Button>
             </div>
