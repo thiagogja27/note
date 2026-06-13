@@ -80,8 +80,8 @@ function processQueue() {
     processQueue()
   }
 
-  utterance.onerror = () => {
-    console.error("Speech synthesis error")
+  utterance.onerror = (event) => {
+    console.error(`Speech synthesis error: ${event.error}`)
     processQueue()
   }
 

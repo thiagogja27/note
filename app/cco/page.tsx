@@ -32,15 +32,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserTasks } from "@/components/user-tasks";
 import { RadarSummary } from "@/components/RadarSummary";
-import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Download, MessageCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveClock } from "@/components/live-clock";
+import { useChat } from "@/contexts/chat-context";
+import { PrivateChat } from "@/components/private-chat";
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 
 export default function CCOPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { openChat } = useChat();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -188,6 +191,7 @@ export default function CCOPage() {
             <LiveClock />
           </div>
           <div className="col-span-1 flex items-center justify-end gap-2">
+            <Button variant="outline" size="icon" onClick={() => openChat()} title="Chat Privado"><MessageCircle className="h-4 w-4" /></Button>
             <ThemeToggle />
             <Button variant="outline" onClick={handleLogout}>Sair</Button>
           </div>
@@ -360,6 +364,7 @@ export default function CCOPage() {
         </Tabs>
 
       </div>
+      {currentUser && <PrivateChat currentUser={currentUser} />}
       <Toaster />
     </div>
   );
