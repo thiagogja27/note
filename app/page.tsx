@@ -378,8 +378,8 @@ export default function NotesApp() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Lado TEAG</h3>
                   <div className="space-y-3">
-                    <div><label className="text-sm font-medium mb-2 block">Rodovia:</label><Input value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia:</label><Input value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Rodovia:</label><Input id="teag-road" value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia:</label><Input id="teag-railway" value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombador 05:</label><Input id="teag-road-tombador-05" value={teagRoadTombador05} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 03:</label><Input id="teag-railway-moega-03" value={teagRailwayMoega03} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 04:</label><Input id="teag-railway-moega-04" value={teagRailwayMoega04} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>

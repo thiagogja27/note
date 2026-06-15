@@ -251,7 +251,7 @@ export default function CCOPage() {
                           <h3 className="text-lg font-semibold">Lado TEAG</h3>
                           <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
-                              <Select onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}>
+                              <Select id="teag-road" onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}>
                                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="A3">A3</SelectItem>
@@ -263,7 +263,7 @@ export default function CCOPage() {
                           </div>
                           <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Ferrovia:</label>
-                              <Select onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}>
+                              <Select id="teag-railway" onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}>
                                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="A3">A3</SelectItem>
