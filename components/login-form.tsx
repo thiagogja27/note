@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Image from "next/image";
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -39,13 +40,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true)
 
     try {
-      // 1. Autentica com o Firebase Auth. A função agora lança um erro detalhado em caso de falha.
       const firebaseUser = await signInWithEmailPassword(email, password)
-
-      // 2. Busca o perfil do usuário no Realtime Database.
       let appUser = await getUser(firebaseUser.uid)
 
-      // 3. Se o perfil não existir, cria um novo com valores padrão.
       if (!appUser) {
         const newUser: User = {
           id: firebaseUser.uid,
@@ -54,22 +51,19 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           department: "balanca",
         }
         await saveOrUpdateUser(newUser)
-        appUser = await getUser(firebaseUser.uid) // Busca o usuário recém-criado
+        appUser = await getUser(firebaseUser.uid)
 
         if (!appUser) {
-          // Este erro só deve acontecer se houver um problema grave com o banco de dados.
           setError("Falha ao criar o perfil do usuário no banco de dados. Contate o suporte.")
           setIsLoading(false)
           return
         }
       }
 
-      // 4. Salva a sessão e executa o login no aplicativo.
       saveAuthSession(firebaseUser, appUser.department)
       onLogin(appUser)
       
     } catch (error: any) {
-      // 5. Exibe a mensagem de erro específica vinda do Firebase (ex: "Senha incorreta").
       console.error("[v0] Erro detalhado ao fazer login:", error.message)
       setError(error.message)
       setPassword("")
@@ -79,7 +73,23 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      <div className="absolute top-5 left-5">
+        <Image
+          src="/baltech-logo.png"
+          alt="Baltech Logo"
+          width={130} 
+          height={130}
+        />
+      </div>
+      <div className="absolute top-5 right-5">
+        <Image
+          src="/teag-logo.png"
+          alt="TEAG Logo"
+          width={130}
+          height={130}
+        />
+      </div>
       <div className="w-full max-w-md">
         <div className="flex justify-end mb-4">
           <ThemeToggle />
@@ -129,27 +139,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               {isLoading ? "Validando..." : "Entrar"}
             </Button>
           </form>
-
-          <div className="mt-6 p-3 bg-muted/50 rounded-md border border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              Usando Firebase Authentication
-              <br />
-              <br />
-              <strong className="text-foreground">Primeiro acesso?</strong>
-              <br />
-              Crie usuários em:{" "}
-              <a
-                href="https://console.firebase.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Firebase Console
-              </a>
-              <br />
-              Authentication → Users → Add user
-            </p>
-          </div>
         </div>
       </div>
     </div>
