@@ -1,17 +1,18 @@
-'use client'
+import { getDatabase, ref, onValue, set, push, serverTimestamp, query, orderByChild, equalTo, get, update, remove } from "firebase/database";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { app } from "./firebase";
+import type { Note, NotePayload, Department } from "@/types/note";
+import type { StorageSelection, StorageLog } from "@/types/storage";
 
-import { ref, onValue, set, push, update, remove, get } from "firebase/database"
-import { db } from "./firebase"
-import type { Note } from "@/types/note"
-import { RADAR_CATEGORY, INFO_CATEGORY } from "@/types/note"
-import type { Department } from "@/types/user"
-import type { StorageSelection, StorageLog } from "@/types/storage"
+const db = getDatabase(app);
 
 const COLLECTION_NAME = "anotacoes"
 const STORAGE_COLLECTION = "estocagem"
 const STORAGE_LOGS_COLLECTION = "storage_logs"
 const STORAGE_DOC_ID = "current"
 const USERS_COLLECTION = "usuarios"
+const RADAR_CATEGORY = "RADAR"
+const INFO_CATEGORY = "Informações"
 
 function cleanupObject(obj: any) {
   const newObj: any = {}
@@ -21,21 +22,6 @@ function cleanupObject(obj: any) {
     }
   }
   return newObj
-}
-
-export function isFirebaseConfigured(): boolean {
-  const hasApiKey = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-  const hasProjectId = !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  const hasDatabaseUrl = !!process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
-  return hasApiKey && hasProjectId && hasDatabaseUrl
-}
-
-export function getConfigErrorMessage(): string {
-  const missing: string[] = []
-  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) missing.push("NEXT_PUBLIC_FIREBASE_API_KEY")
-  if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) missing.push("NEXT_PUBLIC_FIREBASE_PROJECT_ID")
-  if (!process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL) missing.push("NEXT_PUBLIC_FIREBASE_DATABASE_URL")
-  return `Variáveis de ambiente faltando: ${missing.join(", ")}`
 }
 
 function createNotesListener(category: string | null, callback: (notes: Note[]) => void): () => void {
@@ -184,7 +170,6 @@ export async function saveStorageSelection(selection: Omit<StorageSelection, "id
     const timestampISO = new Date().toISOString();
     const storageRef = ref(db, `${STORAGE_COLLECTION}/${STORAGE_DOC_ID}`);
 
-    // Obter o estado atual para comparar as mudanças
     const currentSnapshot = await get(storageRef);
     const currentData = currentSnapshot.val() || {};
 
@@ -192,7 +177,6 @@ export async function saveStorageSelection(selection: Omit<StorageSelection, "id
     
     await set(storageRef, dataToSave);
 
-    // Gerar log apenas se houver mudanças
     const changes: Partial<StorageSelection> = {};
     for (const key in selection) {
         if (key !== 'updatedAt' && key !== 'updatedBy' && key !== 'updatedByDepartment') {

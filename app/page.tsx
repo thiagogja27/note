@@ -11,7 +11,7 @@ import {
   listenToInfoNotes,
   listenToStorage,
 } from "@/lib/realtime"
-import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth"
+import { loadAuthSession, clearAuthSession, isFirebaseConfigured, getConfigErrorMessage } from "@/lib/firebase-auth"
 import type { Note, Category, SpecialCategory } from "@/types/note"
 import { CATEGORIES, RADAR_CATEGORY, INFO_CATEGORY } from "@/types/note"
 import type { User } from "@/types/user"
@@ -366,7 +366,7 @@ export default function NotesApp() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4 text-primary">Controle de Operação e Célula</h2>
               <p className="text-sm text-muted-foreground mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded p-3">⚠️ Somente o setor CCO pode alterar os campos. As informações são atualizadas em tempo real.</p>
-              {storageUpdatedAt && (<div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded"><p className="text-sm"><span className="font-semibold text-primary">Última atualização:</span> <span className="text-muted-foreground">{new Date(storageUpdatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} às {new Date(storageUpdatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> {" • "} <span className="font-medium text-primary">{storageUpdatedBy} ({storageUpdatedByDepartment?.toUpperCase()})</span></p></div>)}
+              {storageUpdatedAt && (<div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded"><p className="text-sm"><span className="font-semibold text-primary">Última atualização:</span> <span className="text-muted-foreground">{storageUpdatedAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} às {storageUpdatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> {" • "} <span className="font-medium text-primary">{storageUpdatedBy} ({storageUpdatedByDepartment?.toUpperCase()})</span></p></div>)}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Lado TEG</h3>
