@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect, useRef } from "react"
 import {
@@ -37,6 +37,7 @@ import { RadarSummary } from "@/components/RadarSummary"
 import { useChat } from "@/contexts/chat-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveClock } from "@/components/live-clock";
+import { ExternalLinks } from "@/components/external-links";
 
 export default function NotesApp() {
   const router = useRouter()
@@ -251,6 +252,10 @@ export default function NotesApp() {
             <Button variant="outline" onClick={handleLogout}>Sair</Button>
           </div>
         </header>
+
+        <div className="mb-6">
+          <ExternalLinks />
+        </div>
 
         <div className="mb-6"><RadarSummary radarNotes={radarNotes} /></div>
 
