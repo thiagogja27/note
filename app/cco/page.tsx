@@ -156,7 +156,7 @@ export default function CCOPage() {
         const alertMessage = `🚨 ALTERAÇÃO DE ${isOperationField ? 'OPERAÇÃO' : 'CÉLULA'}: ${fieldNames[field]} alterada para ${displayValue}`;
         
         if (!isOperationField) {
-          await addNote({ title: alertMessage, content: alertMessage, category: RADAR_CATEGORY, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department });
+          await addNote({ title: alertMessage, content: alertMessage, category: RADAR_CATEGORY, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department, completed: false });
         }
         
         toast({ title: "Estocagem Atualizada", description: `${fieldNames[field]} foi definida como ${displayValue}.` });
@@ -189,7 +189,7 @@ export default function CCOPage() {
         await updateNote(id, { content }, currentUser.username, currentUser.department);
         toast({ title: "Item atualizado!" });
       } else {
-        await addNote({ title: content.substring(0,30), content, category, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department });
+        await addNote({ title: content.substring(0,30), content, category, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department, completed: false });
         toast({ title: `Adicionado em ${category}!` });
       }
       if (category === 'RADAR') setNewRadarInput("");

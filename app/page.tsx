@@ -10,8 +10,10 @@ import {
   listenToRadarNotes,
   listenToInfoNotes,
   listenToStorage,
+  isFirebaseConfigured, 
+  getConfigErrorMessage
 } from "@/lib/realtime"
-import { loadAuthSession, clearAuthSession, isFirebaseConfigured, getConfigErrorMessage } from "@/lib/firebase-auth"
+import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth"
 import type { Note, Category, SpecialCategory } from "@/types/note"
 import { CATEGORIES, RADAR_CATEGORY, INFO_CATEGORY } from "@/types/note"
 import type { User } from "@/types/user"
@@ -73,16 +75,37 @@ export default function NotesApp() {
   const isInitialLoadRef = useRef(true)
 
   useEffect(() => {
-    // A lógica de isFirebaseConfigured foi removida.
+    if (!isFirebaseConfigured()) {
+      setError(getConfigErrorMessage())
+      setLoading(false)
+    }
   }, [])
+  
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const user = await loadAuthSession();
+        if (user) {
+          if (user.department === "cco") { router.push("/cco"); return; }
+          if (user.department === "supervisor") { router.push("/supervisor"); return; }
+          setCurrentUser(user);
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.error("[v0] Erro ao carregar sessão:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSession();
+  }, [router]);
 
   useEffect(() => {
-    if (!currentUser) return
+    if (!currentUser) return;
 
     const unsubscribers = [
       listenToNotes(currentUser.id, (notes) => {
         setNotes(notes)
-        setLoading(false)
       }),
       listenToRadarNotes((notes) => {
         if (!isInitialLoadRef.current && notes.length > prevRadarCountRef.current && isVoiceEnabled()) {
@@ -144,20 +167,6 @@ export default function NotesApp() {
     }
   }, [currentUser])
 
-  useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const user = await loadAuthSession()
-        if (user) {
-          if (user.department === "cco") { router.push("/cco"); return }
-          if (user.department === "supervisor") { router.push("/supervisor"); return }
-          setCurrentUser(user); setIsAuthenticated(true);
-        } else { setLoading(false); }
-      } catch (err) { console.error("[v0] Erro ao carregar sessão:", err); setLoading(false); }
-    }
-    loadSession()
-  }, [router])
-
   const handleLogin = (user: User) => {
     if (user.department === "cco") { router.push("/cco"); return }
     if (user.department === "supervisor") { router.push("/supervisor"); return }
@@ -177,7 +186,7 @@ export default function NotesApp() {
       if (category === INFO_CATEGORY && !trimmedTitle) { toast({ title: "Título é obrigatório para Informações", variant: "destructive" }); return; }
 
       try {
-          await addNote({ title: category === INFO_CATEGORY ? trimmedTitle : trimmedContent.substring(0, 50), content: trimmedContent, category, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department })
+          await addNote({ title: category === INFO_CATEGORY ? trimmedTitle : trimmedContent.substring(0, 50), content: trimmedContent, category, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department, completed: false })
           if(category === RADAR_CATEGORY) setNewRadarInput("")
           if(category === INFO_CATEGORY) { setNewInfoTitle(""); setNewInfoContent(""); }
           if(CATEGORIES.includes(category as Category)) setNewNoteInputs({ ...newNoteInputs, [category as Category]: "" })
@@ -223,13 +232,15 @@ export default function NotesApp() {
     return operation === 'descarga-vagao' ? 'Descarga Vagão' : 'Descarga Caminhão';
   }
 
-  if (!isAuthenticated) return <LoginForm onLogin={handleLogin} />
-  if (error) return <DatabaseSetupGuide />
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
     </div>
   )
+  
+  if (error) return <DatabaseSetupGuide />
+  if (!isAuthenticated) return <LoginForm onLogin={handleLogin} />
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,8 +328,7 @@ export default function NotesApp() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4 text-primary">Tarefas Atribuídas a Você</h2>
               <p className="text-sm text-muted-foreground mb-4">Gerencie as tarefas que foram atribuídas a você pelo supervisor</p>
-              {currentUser && <UserTasks currentUser={currentUser} />}
-            </div>
+              {currentUser && <UserTasks currentUser={currentUser} />}</div>
           </TabsContent>
 
           <TabsContent value="info" className="mt-6">

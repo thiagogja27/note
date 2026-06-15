@@ -1,18 +1,17 @@
-import { getDatabase, ref, onValue, set, push, serverTimestamp, query, orderByChild, equalTo, get, update, remove } from "firebase/database";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { app } from "./firebase";
-import type { Note, NotePayload, Department } from "@/types/note";
-import type { StorageSelection, StorageLog } from "@/types/storage";
+'use client'
 
-const db = getDatabase(app);
+import { ref, onValue, set, push, update, remove, get } from "firebase/database"
+import { db } from "./firebase"
+import type { Note } from "@/types/note"
+import { RADAR_CATEGORY, INFO_CATEGORY } from "@/types/note"
+import type { Department } from "@/types/user"
+import type { StorageSelection, StorageLog } from "@/types/storage"
 
 const COLLECTION_NAME = "anotacoes"
 const STORAGE_COLLECTION = "estocagem"
 const STORAGE_LOGS_COLLECTION = "storage_logs"
 const STORAGE_DOC_ID = "current"
 const USERS_COLLECTION = "usuarios"
-const RADAR_CATEGORY = "RADAR"
-const INFO_CATEGORY = "Informações"
 
 function cleanupObject(obj: any) {
   const newObj: any = {}
@@ -22,6 +21,21 @@ function cleanupObject(obj: any) {
     }
   }
   return newObj
+}
+
+export function isFirebaseConfigured(): boolean {
+  const hasApiKey = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+  const hasProjectId = !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  const hasDatabaseUrl = !!process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
+  return hasApiKey && hasProjectId && hasDatabaseUrl
+}
+
+export function getConfigErrorMessage(): string {
+  const missing: string[] = []
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) missing.push("NEXT_PUBLIC_FIREBASE_API_KEY")
+  if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) missing.push("NEXT_PUBLIC_FIREBASE_PROJECT_ID")
+  if (!process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL) missing.push("NEXT_PUBLIC_FIREBASE_DATABASE_URL")
+  return `Variáveis de ambiente faltando: ${missing.join(", ")}`
 }
 
 function createNotesListener(category: string | null, callback: (notes: Note[]) => void): () => void {
@@ -166,36 +180,49 @@ export function listenToStorageLogs(callback: (logs: StorageLog[]) => void): () 
   }
 }
 
-export async function saveStorageSelection(selection: Omit<StorageSelection, "id">): Promise<void> {
-    const timestampISO = new Date().toISOString();
-    const storageRef = ref(db, `${STORAGE_COLLECTION}/${STORAGE_DOC_ID}`);
+export async function saveStorageSelection(
+  selection: Omit<StorageSelection, "id" | "updatedAt"> & { updatedBy: string; updatedByDepartment: Department },
+): Promise<void> {
+  const timestampISO = new Date().toISOString()
+  const storageRef = ref(db, `${STORAGE_COLLECTION}/${STORAGE_DOC_ID}`)
 
-    const currentSnapshot = await get(storageRef);
-    const currentData = currentSnapshot.val() || {};
+  const dataToSave = {
+    tegRoad: selection.tegRoad || "",
+    tegRoadTombador: selection.tegRoadTombador || "",
+    tegRailwayMoega01: selection.tegRailwayMoega01 || "",
+    tegRailwayMoega02: selection.tegRailwayMoega02 || "",
+    teagRoad: selection.teagRoad || "",
+    teagRailway: selection.teagRailway || "",
+    teagRoadTombador05: selection.teagRoadTombador05 || "",
+    teagRailwayMoega03: selection.teagRailwayMoega03 || "",
+    teagRailwayMoega04: selection.teagRailwayMoega04 || "",
+    teagRailwayMoega05: selection.teagRailwayMoega05 || "",
+    updatedBy: selection.updatedBy,
+    updatedByDepartment: selection.updatedByDepartment,
+    updatedAt: timestampISO as any,
+  }
 
-    const dataToSave = { ...selection, updatedAt: timestampISO };
-    
-    await set(storageRef, dataToSave);
+  await set(storageRef, dataToSave)
 
-    const changes: Partial<StorageSelection> = {};
-    for (const key in selection) {
-        if (key !== 'updatedAt' && key !== 'updatedBy' && key !== 'updatedByDepartment') {
-            if (currentData[key] !== (selection as any)[key]) {
-                (changes as any)[key] = (selection as any)[key];
-            }
-        }
-    }
-
-    if (Object.keys(changes).length > 0) {
-        const logRef = push(ref(db, STORAGE_LOGS_COLLECTION));
-        const newLog: Omit<StorageLog, "id"> = {
-            changedBy: selection.updatedBy,
-            department: selection.updatedByDepartment,
-            timestamp: timestampISO as any,
-            changes: changes,
-        };
-        await set(logRef, newLog);
-    }
+  const logRef = push(ref(db, STORAGE_LOGS_COLLECTION))
+  const newLog: Omit<StorageLog, "id"> = {
+    changedBy: selection.updatedBy,
+    department: selection.updatedByDepartment,
+    timestamp: timestampISO as any,
+    changes: {
+      tegRoad: selection.tegRoad || "",
+      tegRoadTombador: selection.tegRoadTombador || "",
+      tegRailwayMoega01: selection.tegRailwayMoega01 || "",
+      tegRailwayMoega02: selection.tegRailwayMoega02 || "",
+      teagRoad: selection.teagRoad || "",
+      teagRailway: selection.teagRailway || "",
+      teagRoadTombador05: selection.teagRoadTombador05 || "",
+      teagRailwayMoega03: selection.teagRailwayMoega03 || "",
+      teagRailwayMoega04: selection.teagRailwayMoega04 || "",
+      teagRailwayMoega05: selection.teagRailwayMoega05 || "",
+    },
+  }
+  await set(logRef, newLog)
 }
 
 export async function saveOrUpdateUser(user: any): Promise<void> {
