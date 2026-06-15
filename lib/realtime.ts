@@ -183,46 +183,39 @@ export function listenToStorageLogs(callback: (logs: StorageLog[]) => void): () 
 export async function saveStorageSelection(
   selection: Omit<StorageSelection, "id" | "updatedAt"> & { updatedBy: string; updatedByDepartment: Department },
 ): Promise<void> {
-  const timestampISO = new Date().toISOString()
-  const storageRef = ref(db, `${STORAGE_COLLECTION}/${STORAGE_DOC_ID}`)
+  const timestampISO = new Date().toISOString();
+  const storageRef = ref(db, `${STORAGE_COLLECTION}/${STORAGE_DOC_ID}`);
+
+  const currentSnapshot = await get(storageRef);
+  const currentData = currentSnapshot.val() || {};
 
   const dataToSave = {
-    tegRoad: selection.tegRoad || "",
-    tegRoadTombador: selection.tegRoadTombador || "",
-    tegRailwayMoega01: selection.tegRailwayMoega01 || "",
-    tegRailwayMoega02: selection.tegRailwayMoega02 || "",
-    teagRoad: selection.teagRoad || "",
-    teagRailway: selection.teagRailway || "",
-    teagRoadTombador05: selection.teagRoadTombador05 || "",
-    teagRailwayMoega03: selection.teagRailwayMoega03 || "",
-    teagRailwayMoega04: selection.teagRailwayMoega04 || "",
-    teagRailwayMoega05: selection.teagRailwayMoega05 || "",
-    updatedBy: selection.updatedBy,
-    updatedByDepartment: selection.updatedByDepartment,
-    updatedAt: timestampISO as any,
+    ...selection,
+    updatedAt: timestampISO,
+  };
+
+  await set(storageRef, dataToSave);
+
+  const changes: Partial<StorageLog["changes"]> = {};
+  for (const key in selection) {
+    if (key !== "updatedBy" && key !== "updatedByDepartment") {
+      const typedKey = key as keyof typeof selection;
+      if (currentData[typedKey] !== selection[typedKey]) {
+        (changes as any)[typedKey] = selection[typedKey];
+      }
+    }
   }
 
-  await set(storageRef, dataToSave)
-
-  const logRef = push(ref(db, STORAGE_LOGS_COLLECTION))
-  const newLog: Omit<StorageLog, "id"> = {
-    changedBy: selection.updatedBy,
-    department: selection.updatedByDepartment,
-    timestamp: timestampISO as any,
-    changes: {
-      tegRoad: selection.tegRoad || "",
-      tegRoadTombador: selection.tegRoadTombador || "",
-      tegRailwayMoega01: selection.tegRailwayMoega01 || "",
-      tegRailwayMoega02: selection.tegRailwayMoega02 || "",
-      teagRoad: selection.teagRoad || "",
-      teagRailway: selection.teagRailway || "",
-      teagRoadTombador05: selection.teagRoadTombador05 || "",
-      teagRailwayMoega03: selection.teagRailwayMoega03 || "",
-      teagRailwayMoega04: selection.teagRailwayMoega04 || "",
-      teagRailwayMoega05: selection.teagRailwayMoega05 || "",
-    },
+  if (Object.keys(changes).length > 0) {
+    const logRef = push(ref(db, STORAGE_LOGS_COLLECTION));
+    const newLog: Omit<StorageLog, "id"> = {
+      changedBy: selection.updatedBy,
+      department: selection.updatedByDepartment,
+      timestamp: timestampISO as any,
+      changes: changes,
+    };
+    await set(logRef, newLog);
   }
-  await set(logRef, newLog)
 }
 
 export async function saveOrUpdateUser(user: any): Promise<void> {
