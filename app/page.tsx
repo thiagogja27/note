@@ -6,8 +6,6 @@ import {
   updateNote,
   deleteNote,
   toggleNoteCompleted,
-  isFirebaseConfigured,
-  getConfigErrorMessage,
   listenToNotes,
   listenToRadarNotes,
   listenToInfoNotes,
@@ -61,16 +59,8 @@ export default function NotesApp() {
   const [voiceNotificationsEnabled, setVoiceNotificationsEnabled] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const [tegRoad, setTegRoad] = useState("")
-  const [tegRoadTombador, setTegRoadTombador] = useState("")
-  const [tegRailwayMoega01, setTegRailwayMoega01] = useState("")
-  const [tegRailwayMoega02, setTegRailwayMoega02] = useState("")
-  const [teagRoad, setTeagRoad] = useState("")
-  const [teagRailway, setTeagRailway] = useState("")
-  const [teagRoadTombador05, setTeagRoadTombador05] = useState("")
-  const [teagRailwayMoega03, setTeagRailwayMoega03] = useState("")
-  const [teagRailwayMoega04, setTeagRailwayMoega04] = useState("")
-  const [teagRailwayMoega05, setTeagRailwayMoega05] = useState("")
+  const [storage, setStorage] = useState<any | null>(null);
+
   const [storageUpdatedBy, setStorageUpdatedBy] = useState<string>("")
   const [storageUpdatedAt, setStorageUpdatedAt] = useState<Date | null>(null)
   const [storageUpdatedByDepartment, setStorageUpdatedByDepartment] = useState<string>("")
@@ -83,10 +73,7 @@ export default function NotesApp() {
   const isInitialLoadRef = useRef(true)
 
   useEffect(() => {
-    if (!isFirebaseConfigured()) {
-      setError(getConfigErrorMessage())
-      setLoading(false)
-    }
+    // A lógica de isFirebaseConfigured foi removida.
   }, [])
 
   useEffect(() => {
@@ -106,32 +93,44 @@ export default function NotesApp() {
         prevRadarCountRef.current = notes.length
       }),
       listenToInfoNotes(setInfoNotes),
-      listenToStorage((storage) => {
-        if (storage) {
+      listenToStorage((storageData) => {
+        if (storageData) {
           if (prevStorageRef.current && !isInitialLoadRef.current && isVoiceEnabled()) {
-            const prev = prevStorageRef.current
-            if (prev.tegRoad !== storage.tegRoad && storage.tegRoad) announceStorageChange("TEG Rodovia Tombadores 01 e 06", storage.tegRoad)
-            if (prev.tegRoadTombador !== storage.tegRoadTombador && storage.tegRoadTombador) announceStorageChange("TEG Rodovia Tombador 07", storage.tegRoadTombador)
-            if (prev.tegRailwayMoega01 !== storage.tegRailwayMoega01 && storage.tegRailwayMoega01) announceStorageChange("TEG Ferrovia Moega 01", storage.tegRailwayMoega01)
-            if (prev.tegRailwayMoega02 !== storage.tegRailwayMoega02 && storage.tegRailwayMoega02) announceStorageChange("TEG Ferrovia Moega 02", storage.tegRailwayMoega02)
-            if (prev.teagRoad !== storage.teagRoad && storage.teagRoad) announceStorageChange("TEAG Rodovia", storage.teagRoad)
-            if (prev.teagRailway !== storage.teagRailway && storage.teagRailway) announceStorageChange("TEAG Ferrovia", storage.teagRailway)
-            if (prev.teagRoadTombador05 !== storage.teagRoadTombador05 && storage.teagRoadTombador05) announceStorageChange("TEAG Rodovia Tombador 05", storage.teagRoadTombador05)
-            if (prev.teagRailwayMoega03 !== storage.teagRailwayMoega03 && storage.teagRailwayMoega03) announceStorageChange("TEAG Ferrovia Moega 03", storage.teagRailwayMoega03)
-            if (prev.teagRailwayMoega04 !== storage.teagRailwayMoega04 && storage.teagRailwayMoega04) announceStorageChange("TEAG Ferrovia Moega 04", storage.teagRailwayMoega04)
-            if (prev.teagRailwayMoega05 !== storage.teagRailwayMoega05 && storage.teagRailwayMoega05) announceStorageChange("TEAG Ferrovia Moega 05", storage.teagRailwayMoega05)
+            const prev = prevStorageRef.current;
+            const current = storageData;
+            const fields: Record<string, string> = {
+                tegRoad: "TEG Rodovia Tombadores 01 e 06",
+                tegRoadTombador: "TEG Rodovia Tombador 07",
+                tegRailwayMoega01: "TEG Ferrovia Moega 01",
+                tegRailwayMoega02: "TEG Ferrovia Moega 02",
+                teagRoad: "TEAG Rodovia",
+                teagRailway: "TEAG Ferrovia",
+                teagRoadTombador05: "TEAG Rodovia Tombador 05",
+                teagRailwayMoega03: "TEAG Ferrovia Moega 03",
+                teagRailwayMoega04: "TEAG Ferrovia Moega 04",
+                teagRailwayMoega05: "TEAG Ferrovia Moega 05",
+                tegRailwayMoega01Operation: "Operação TEG Ferrovia Moega 01",
+                tegRailwayMoega02Operation: "Operação TEG Ferrovia Moega 02",
+                teagRailwayMoega03Operation: "Operação TEAG Ferrovia Moega 03",
+                teagRailwayMoega04Operation: "Operação TEAG Ferrovia Moega 04",
+                teagRailwayMoega05Operation: "Operação TEAG Ferrovia Moega 05",
+            };
+
+            for (const key in fields) {
+                if (prev[key] !== current[key] && current[key]) {
+                    let value = current[key];
+                    if (key.includes('Operation')) {
+                        value = current[key] === 'descarga-vagao' ? 'Descarga Vagão' : 'Descarga Caminhão';
+                    }
+                    announceStorageChange(fields[key], value);
+                }
+            }
           }
-          setTegRoad(storage.tegRoad || ""); setTegRoadTombador(storage.tegRoadTombador || "");
-          setTegRailwayMoega01(storage.tegRailwayMoega01 || ""); setTegRailwayMoega02(storage.tegRailwayMoega02 || "");
-          setTeagRoad(storage.teagRoad || "");
-          setTeagRailway(storage.teagRailway || "");
-          setTeagRoadTombador05(storage.teagRoadTombador05 || "");
-          setTeagRailwayMoega03(storage.teagRailwayMoega03 || "");
-          setTeagRailwayMoega04(storage.teagRailwayMoega04 || "");
-          setTeagRailwayMoega05(storage.teagRailwayMoega05 || "");
-          setStorageUpdatedBy(storage.updatedBy || ""); setStorageUpdatedAt(storage.updatedAt || null);
-          setStorageUpdatedByDepartment(storage.updatedByDepartment || "");
-          prevStorageRef.current = storage
+          setStorage(storageData);
+          setStorageUpdatedBy(storageData.updatedBy || ""); 
+          setStorageUpdatedAt(storageData.updatedAt ? new Date(storageData.updatedAt) : null);
+          setStorageUpdatedByDepartment(storageData.updatedByDepartment || "");
+          prevStorageRef.current = storageData
         }
       })
     ];
@@ -139,7 +138,7 @@ export default function NotesApp() {
   }, [currentUser])
 
   useEffect(() => {
-    if (currentUser && isFirebaseConfigured()) {
+    if (currentUser) {
       const timer = setTimeout(() => { isInitialLoadRef.current = false }, 3000)
       return () => clearTimeout(timer)
     }
@@ -147,7 +146,6 @@ export default function NotesApp() {
 
   useEffect(() => {
     const loadSession = async () => {
-      if (!isFirebaseConfigured()) { setError(getConfigErrorMessage()); setLoading(false); return; }
       try {
         const user = await loadAuthSession()
         if (user) {
@@ -161,7 +159,6 @@ export default function NotesApp() {
   }, [router])
 
   const handleLogin = (user: User) => {
-    if (!isFirebaseConfigured()) { setError(getConfigErrorMessage()); return }
     if (user.department === "cco") { router.push("/cco"); return }
     if (user.department === "supervisor") { router.push("/supervisor"); return }
     setCurrentUser(user); setIsAuthenticated(true);
@@ -221,8 +218,13 @@ export default function NotesApp() {
     toast({ title: newState ? "Notificações de voz ativadas" : "Notificações de voz desativadas" })
   }
 
+  const formatOperation = (operation: string | undefined) => {
+    if (!operation) return "Aguardando...";
+    return operation === 'descarga-vagao' ? 'Descarga Vagão' : 'Descarga Caminhão';
+  }
+
   if (!isAuthenticated) return <LoginForm onLogin={handleLogin} />
-  if (error && error.includes("não está configurada")) return <DatabaseSetupGuide />
+  if (error) return <DatabaseSetupGuide />
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
@@ -265,7 +267,7 @@ export default function NotesApp() {
             <TabsTrigger value="tasks">Minhas Tarefas</TabsTrigger>
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="radar">RADAR</TabsTrigger>
-            <TabsTrigger value="storage">Estocagem</TabsTrigger>
+            <TabsTrigger value="storage">Operação e Célula</TabsTrigger>
           </TabsList>
 
           <TabsContent value="notes" className="mt-6">
@@ -362,28 +364,28 @@ export default function NotesApp() {
 
           <TabsContent value="storage" className="mt-6">
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4 text-primary">Controle de Estocagem</h2>
-              <p className="text-sm text-muted-foreground mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded p-3">⚠️ Somente o setor CCO pode alterar as células de estocagem. As informações são atualizadas em tempo real.</p>
-              {storageUpdatedAt && (<div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded"><p className="text-sm"><span className="font-semibold text-primary">Última atualização:</span> <span className="text-muted-foreground">{storageUpdatedAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} às {storageUpdatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> {" • "} <span className="font-medium text-primary">{storageUpdatedBy} ({storageUpdatedByDepartment?.toUpperCase()})</span></p></div>)}
+              <h2 className="text-xl font-semibold mb-4 text-primary">Controle de Operação e Célula</h2>
+              <p className="text-sm text-muted-foreground mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded p-3">⚠️ Somente o setor CCO pode alterar os campos. As informações são atualizadas em tempo real.</p>
+              {storageUpdatedAt && (<div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded"><p className="text-sm"><span className="font-semibold text-primary">Última atualização:</span> <span className="text-muted-foreground">{new Date(storageUpdatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} às {new Date(storageUpdatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> {" • "} <span className="font-medium text-primary">{storageUpdatedBy} ({storageUpdatedByDepartment?.toUpperCase()})</span></p></div>)}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Lado TEG</h3>
                   <div className="space-y-3">
-                    <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombadores 01 e 06:</label><Input id="teg-road" value={tegRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombador 07:</label><Input id="teg-road-tombador" value={tegRoadTombador} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 01:</label><Input id="teg-railway-moega-01" value={tegRailwayMoega01} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 02:</label><Input id="teg-railway-moega-02" value={tegRailwayMoega02} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombadores 01 e 06:</label><Input id="teg-road" value={storage?.tegRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 07:</label><Input id="teg-road-tombador" value={storage?.tegRoadTombador || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 01:</label><div className="flex gap-2"><Input value={storage?.tegRailwayMoega01 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.tegRailwayMoega01Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 02:</label><div className="flex gap-2"><Input value={storage?.tegRailwayMoega02 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.tegRailwayMoega02Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Lado TEAG</h3>
                   <div className="space-y-3">
-                    <div><label className="text-sm font-medium mb-2 block">Rodovia:</label><Input id="teag-road" value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia:</label><Input id="teag-railway" value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombador 05:</label><Input id="teag-road-tombador-05" value={teagRoadTombador05} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 03:</label><Input id="teag-railway-moega-03" value={teagRailwayMoega03} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 04:</label><Input id="teag-railway-moega-04" value={teagRailwayMoega04} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 05:</label><Input id="teag-railway-moega-05" value={teagRailwayMoega05} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Rodovia:</label><Input id="teag-road" value={storage?.teagRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia:</label><Input id="teag-railway" value={storage?.teagRailway || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 05:</label><Input id="teag-road-tombador-05" value={storage?.teagRoadTombador05 || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 03:</label><div className="flex gap-2"><Input value={storage?.teagRailwayMoega03 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.teagRailwayMoega03Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 04:</label><div className="flex gap-2"><Input value={storage?.teagRailwayMoega04 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.teagRailwayMoega04Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 05:</label><div className="flex gap-2"><Input value={storage?.teagRailwayMoega05 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.teagRailwayMoega05Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                   </div>
                 </div>
               </div>

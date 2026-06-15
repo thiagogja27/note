@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth"
-import { getAllUsers, listenToAllUserNotes, deleteNote, listenToRadarNotes, addNote } from "@/lib/realtime"
+import { getAllUsers, listenToAllUserNotes, deleteNote, listenToRadarNotes, addNote, listenToStorage } from "@/lib/realtime"
 import { listenToTasks, addTask, updateTask, deleteTask as deleteTaskFromDb } from "@/lib/tasks"
 import type { User } from "@/types/user"
 import type { Task, TaskPriority, TaskStatus, Shift } from "@/types/task"
@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users, MessageSquare, MessageCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users, MessageSquare, MessageCircle, Warehouse } from 'lucide-react'
 import { formatDistanceToNow } from "@/lib/format-date"
 import { RadarSummary } from "@/components/RadarSummary"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -73,6 +73,8 @@ export default function SupervisorPage() {
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([])
   const [userFilter, setUserFilter] = useState<string>("all")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
+
+  const [storage, setStorage] = useState<any | null>(null);
   
   useEffect(() => {
     const loadSession = async () => {
@@ -94,10 +96,12 @@ export default function SupervisorPage() {
       const unsubscribeTasks = listenToTasks(setTasks)
       const unsubscribeNotes = listenToAllUserNotes(setAllNotes)
       const unsubscribeRadar = listenToRadarNotes(setRadarNotes)
+      const unsubscribeStorage = listenToStorage(setStorage)
       return () => {
         unsubscribeTasks()
         unsubscribeNotes()
         unsubscribeRadar()
+        unsubscribeStorage()
       }
     }
   }, [currentUser])
@@ -209,6 +213,11 @@ export default function SupervisorPage() {
     }
   }
 
+  const formatOperation = (operation: string | undefined) => {
+    if (!operation) return "Aguardando...";
+    return operation === 'descarga-vagao' ? 'Descarga Vagão' : 'Descarga Caminhão';
+  }
+
   const filteredTasks = tasks.filter((task) => {
     if (filterShift !== "all" && task.shift !== filterShift && task.shift !== "Todos") return false
     if (filterStatus !== "all" && task.status !== filterStatus) return false
@@ -254,9 +263,10 @@ export default function SupervisorPage() {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">Gerenciador de Tarefas</TabsTrigger>
             <TabsTrigger value="notes">Visualizador de Anotações</TabsTrigger>
+            <TabsTrigger value="storage">Controle de Estocagem</TabsTrigger>
             <TabsTrigger value="radar">RADAR</TabsTrigger>
           </TabsList>
           
@@ -272,7 +282,7 @@ export default function SupervisorPage() {
                   <div key={note.id} className="group bg-primary/5 border border-primary/30 p-3 rounded">
                     <p className="text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(note.createdAt)}</span>
+                      <span>{note.createdBy} ({note.createdByDepartment}) - {formatDistanceToNow(new Date(note.createdAt))}</span>
                       <div className="opacity-0 group-hover:opacity-100 flex gap-1">
                         <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDeleteNote(note.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
@@ -280,6 +290,45 @@ export default function SupervisorPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="storage">
+            <div className="bg-card border border-border rounded-lg p-6 mt-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><Warehouse className="h-5 w-5"/>Controle de Operação e Célula</h2>
+                <p className="text-sm text-muted-foreground mb-4">Visualização em tempo real das células e operações de estocagem definidas pelo CCO.</p>
+                 {storage?.updatedAt && (
+                    <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded">
+                        <p className="text-sm">
+                            <span className="font-semibold text-primary">Última atualização:</span> 
+                            <span className="text-muted-foreground"> {new Date(storage.updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} às {new Date(storage.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                            {" • "} 
+                            <span className="font-medium text-primary">{storage.updatedBy} ({storage.updatedByDepartment?.toUpperCase()})</span>
+                        </p>
+                    </div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Lado TEG</h3>
+                        <div className="space-y-3">
+                            <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombadores 01 e 06:</label><Input value={storage?.tegRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                            <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 07:</label><Input value={storage?.tegRoadTombador || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                            <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 01:</label><div className="flex gap-2"><Input value={storage?.tegRailwayMoega01 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.tegRailwayMoega01Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                            <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 02:</label><div className="flex gap-2"><Input value={storage?.tegRailwayMoega02 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.tegRailwayMoega02Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Lado TEAG</h3>
+                        <div className="space-y-3">
+                            <div><label className="text-sm font-medium mb-1 block">Rodovia:</label><Input value={storage?.teagRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                            <div><label className="text-sm font-medium mb-1 block">Ferrovia:</label><Input value={storage?.teagRailway || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                            <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 05:</label><Input value={storage?.teagRoadTombador05 || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                            <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 03:</label><div className="flex gap-2"><Input value={storage?.teagRailwayMoega03 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.teagRailwayMoega03Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                            <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 04:</label><div className="flex gap-2"><Input value={storage?.teagRailwayMoega04 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.teagRailwayMoega04Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                            <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 05:</label><div className="flex gap-2"><Input value={storage?.teagRailwayMoega05 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input value={formatOperation(storage?.teagRailwayMoega05Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                        </div>
+                    </div>
+                </div>
             </div>
           </TabsContent>
 
@@ -342,7 +391,8 @@ export default function SupervisorPage() {
                         </div>
                       </div>
                     )))
-                    : ( <p className="text-center text-muted-foreground py-12">Nenhuma anotação encontrada para os filtros selecionados.</p> )
+                    :
+                    ( <p className="text-center text-muted-foreground py-12">Nenhuma anotação encontrada para os filtros selecionados.</p> )
                     }
                 </div>
             </div>
