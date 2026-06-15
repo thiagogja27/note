@@ -14,6 +14,10 @@ type ExcelExportData = {
     'TEG Ferr. Moega 02': string;
     'TEAG Rodovia': string;
     'TEAG Ferrovia': string;
+    'TEAG Rod. Tombador 05': string;
+    'TEAG Ferr. Moega 03': string;
+    'TEAG Ferr. Moega 04': string;
+    'TEAG Ferr. Moega 05': string;
 };
 
 /**
@@ -33,6 +37,10 @@ export function exportStorageLogsToExcel(logs: StorageLog[], fileName: string): 
     'TEG Ferr. Moega 02': log.changes.tegRailwayMoega02 || '--',
     'TEAG Rodovia': log.changes.teagRoad || '--',
     'TEAG Ferrovia': log.changes.teagRailway || '--',
+    'TEAG Rod. Tombador 05': log.changes.teagRoadTombador05 || '--',
+    'TEAG Ferr. Moega 03': log.changes.teagRailwayMoega03 || '--',
+    'TEAG Ferr. Moega 04': log.changes.teagRailwayMoega04 || '--',
+    'TEAG Ferr. Moega 05': log.changes.teagRailwayMoega05 || '--',
   }));
 
   // 2. Cria uma nova folha de cálculo (worksheet) a partir dos dados mapeados
@@ -41,7 +49,7 @@ export function exportStorageLogsToExcel(logs: StorageLog[], fileName: string): 
   // 3. (Opcional) Ajusta a largura das colunas para melhor visualização
   const columnWidths = [
     { wch: 20 }, // Data/Hora
-    { wch: 15 }, // Usuário
+    { wch: 25 }, // Usuário
     { wch: 15 }, // Departamento
     { wch: 20 }, // TEG Rod. 01-06
     { wch: 20 }, // TEG Rod. 07
@@ -49,6 +57,10 @@ export function exportStorageLogsToExcel(logs: StorageLog[], fileName: string): 
     { wch: 20 }, // TEG Ferr. Moega 02
     { wch: 20 }, // TEAG Rodovia
     { wch: 20 }, // TEAG Ferrovia
+    { wch: 25 }, // TEAG Rod. Tombador 05
+    { wch: 25 }, // TEAG Ferr. Moega 03
+    { wch: 25 }, // TEAG Ferr. Moega 04
+    { wch: 25 }, // TEAG Ferr. Moega 05
   ];
   worksheet['!cols'] = columnWidths;
 

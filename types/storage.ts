@@ -1,3 +1,4 @@
+
 import type { Department } from "./user";
 
 export interface StorageSelection {
@@ -6,8 +7,10 @@ export interface StorageSelection {
   tegRoadTombador: string;
   tegRailwayMoega01: string;
   tegRailwayMoega02: string;
-  teagRoad: string;
-  teagRailway: string;
+  teagRoadTombador05: string;
+  teagRailwayMoega03: string;
+  teagRailwayMoega04: string;
+  teagRailwayMoega05: string;
   updatedBy?: string; 
   updatedByDepartment?: Department;
   updatedAt: Date;
@@ -26,7 +29,9 @@ export interface StorageLog {
     tegRoadTombador: string;
     tegRailwayMoega01: string;
     tegRailwayMoega02: string;
-    teagRoad: string;
-    teagRailway: string;
+    teagRoadTombador05: string;
+    teagRailwayMoega03: string;
+    teagRailwayMoega04: string;
+    teagRailwayMoega05: string;
   };
 }

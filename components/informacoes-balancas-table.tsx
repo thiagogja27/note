@@ -1,7 +1,6 @@
+'use client'
 
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -13,24 +12,22 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-
-const initialData = [
-  { id: "BALANÇA01", usuario: "PS959976", maquina: "BRGUAR14300W" },
-  { id: "BALANÇA02", usuario: "PS865110", maquina: "BRGUAR13179W" },
-  { id: "BALANÇA07", usuario: "PS288277", maquina: "BRGUAR14290W" },
-  { id: "BALANÇA08", usuario: "-", maquina: "BRGUAR20273W" },
-  { id: "BALANÇA09", usuario: "PS2243666", maquina: "BRGUAR24682W" },
-  { id: "BALANÇA10", usuario: "PS445662", maquina: "BRGUAR24681W" },
-  { id: "BALANÇA03", usuario: "PS808813", maquina: "BRGUAR14298W" },
-  { id: "BALANÇA04", usuario: "-", maquina: "BRGUAR14299V" },
-  { id: "BALANÇA05", usuario: "PS606021", maquina: "BRGUAR14292V" },
-  { id: "BALANÇA06", usuario: "PS471750", maquina: "BRGUAR20260V" },
-]
+import { getBalancas, saveBalancas } from "@/lib/balancas"
+import type { Balanca } from "@/lib/balancas"
 
 export function InformacoesBalancasTable() {
-  const [data, setData] = useState(initialData)
-  const [originalData, setOriginalData] = useState(JSON.parse(JSON.stringify(initialData)))
+  const [data, setData] = useState<Balanca[]>([])
+  const [originalData, setOriginalData] = useState<Balanca[]>([])
   const { toast } = useToast()
+
+  useEffect(() => {
+    async function fetchData() {
+      const balancas = await getBalancas()
+      setData(balancas)
+      setOriginalData(JSON.parse(JSON.stringify(balancas)))
+    }
+    fetchData()
+  }, [])
 
   const handleInputChange = (index, field, value) => {
     const newData = [...data]
@@ -38,14 +35,21 @@ export function InformacoesBalancasTable() {
     setData(newData)
   }
 
-  const handleSave = () => {
-    // Por agora, salva as alterações localmente.
-    // No futuro, podemos integrar com o Firebase aqui.
-    setOriginalData(JSON.parse(JSON.stringify(data)))
-    toast({
-      title: "Informações Salvas!",
-      description: "As alterações na tabela foram guardadas.",
-    })
+  const handleSave = async () => {
+    try {
+      await saveBalancas(data)
+      setOriginalData(JSON.parse(JSON.stringify(data)))
+      toast({
+        title: "Informações Salvas!",
+        description: "As alterações na tabela foram guardadas.",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar!",
+        description: "Ocorreu um erro ao salvar as informações.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleReset = () => {
@@ -62,14 +66,14 @@ export function InformacoesBalancasTable() {
     <div className="bg-card border rounded-lg p-6 mb-6">
       <div className="flex justify-between items-center mb-4">
         <div>
-           <h2 className="text-xl font-semibold text-primary">Informações das Balanças</h2>
-           <p className="text-sm text-muted-foreground">Tabela com informações editáveis sobre as balanças.</p>
+          <h2 className="text-xl font-semibold text-primary">Informações das Balanças</h2>
+          <p className="text-sm text-muted-foreground">Tabela com informações editáveis sobre as balanças.</p>
         </div>
         {hasChanges && (
-            <div className="flex gap-2">
-                <Button onClick={handleSave} size="sm">Salvar Alterações</Button>
-                <Button onClick={handleReset} variant="outline" size="sm">Cancelar</Button>
-            </div>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} size="sm">Salvar Alterações</Button>
+            <Button onClick={handleReset} variant="outline" size="sm">Cancelar</Button>
+          </div>
         )}
       </div>
       <div className="border rounded-md">

@@ -1,12 +1,10 @@
-import { getFirebaseDatabase } from "./firebase"
+import { db } from "./firebase"
 import { ref, set, get } from "firebase/database"
 
 export async function initializeDatabaseStructure() {
   try {
-    const database = getFirebaseDatabase()
-
     // Check if database is already initialized
-    const usersRef = ref(database, "usuarios")
+    const usersRef = ref(db, "usuarios")
     const snapshot = await get(usersRef)
 
     if (snapshot.exists()) {
@@ -17,7 +15,7 @@ export async function initializeDatabaseStructure() {
     console.log("[v0] Initializing database structure...")
 
     // Initialize usuarios
-    await set(ref(database, "usuarios"), {
+    await set(ref(db, "usuarios"), {
       user1: {
         username: "admin",
         email: "admin@empresa.com",
@@ -42,7 +40,7 @@ export async function initializeDatabaseStructure() {
     })
 
     // Initialize anotacoes with sample notes
-    await set(ref(database, "anotacoes"), {
+    await set(ref(db, "anotacoes"), {
       note1: {
         id: "note1",
         content: "Verificar emails pendentes do cliente XYZ",
@@ -91,7 +89,7 @@ export async function initializeDatabaseStructure() {
       teagCells[cell] = false
     })
 
-    await set(ref(database, "estocagem/current"), {
+    await set(ref(db, "estocagem/current"), {
       teg: tegCells,
       teag: teagCells,
     })

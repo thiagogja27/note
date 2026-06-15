@@ -66,6 +66,10 @@ export default function NotesApp() {
   const [tegRailwayMoega02, setTegRailwayMoega02] = useState("")
   const [teagRoad, setTeagRoad] = useState("")
   const [teagRailway, setTeagRailway] = useState("")
+  const [teagRoadTombador05, setTeagRoadTombador05] = useState("")
+  const [teagRailwayMoega03, setTeagRailwayMoega03] = useState("")
+  const [teagRailwayMoega04, setTeagRailwayMoega04] = useState("")
+  const [teagRailwayMoega05, setTeagRailwayMoega05] = useState("")
   const [storageUpdatedBy, setStorageUpdatedBy] = useState<string>("")
   const [storageUpdatedAt, setStorageUpdatedAt] = useState<Date | null>(null)
   const [storageUpdatedByDepartment, setStorageUpdatedByDepartment] = useState<string>("")
@@ -111,10 +115,19 @@ export default function NotesApp() {
             if (prev.tegRailwayMoega02 !== storage.tegRailwayMoega02 && storage.tegRailwayMoega02) announceStorageChange("TEG Ferrovia Moega 02", storage.tegRailwayMoega02)
             if (prev.teagRoad !== storage.teagRoad && storage.teagRoad) announceStorageChange("TEAG Rodovia", storage.teagRoad)
             if (prev.teagRailway !== storage.teagRailway && storage.teagRailway) announceStorageChange("TEAG Ferrovia", storage.teagRailway)
+            if (prev.teagRoadTombador05 !== storage.teagRoadTombador05 && storage.teagRoadTombador05) announceStorageChange("TEAG Rodovia Tombador 05", storage.teagRoadTombador05)
+            if (prev.teagRailwayMoega03 !== storage.teagRailwayMoega03 && storage.teagRailwayMoega03) announceStorageChange("TEAG Ferrovia Moega 03", storage.teagRailwayMoega03)
+            if (prev.teagRailwayMoega04 !== storage.teagRailwayMoega04 && storage.teagRailwayMoega04) announceStorageChange("TEAG Ferrovia Moega 04", storage.teagRailwayMoega04)
+            if (prev.teagRailwayMoega05 !== storage.teagRailwayMoega05 && storage.teagRailwayMoega05) announceStorageChange("TEAG Ferrovia Moega 05", storage.teagRailwayMoega05)
           }
           setTegRoad(storage.tegRoad || ""); setTegRoadTombador(storage.tegRoadTombador || "");
           setTegRailwayMoega01(storage.tegRailwayMoega01 || ""); setTegRailwayMoega02(storage.tegRailwayMoega02 || "");
-          setTeagRoad(storage.teagRoad || ""); setTeagRailway(storage.teagRailway || "");
+          setTeagRoad(storage.teagRoad || "");
+          setTeagRailway(storage.teagRailway || "");
+          setTeagRoadTombador05(storage.teagRoadTombador05 || "");
+          setTeagRailwayMoega03(storage.teagRailwayMoega03 || "");
+          setTeagRailwayMoega04(storage.teagRailwayMoega04 || "");
+          setTeagRailwayMoega05(storage.teagRailwayMoega05 || "");
           setStorageUpdatedBy(storage.updatedBy || ""); setStorageUpdatedAt(storage.updatedAt || null);
           setStorageUpdatedByDepartment(storage.updatedByDepartment || "");
           prevStorageRef.current = storage
@@ -347,7 +360,28 @@ export default function NotesApp() {
               <h2 className="text-xl font-semibold mb-4 text-primary">Controle de Estocagem</h2>
               <p className="text-sm text-muted-foreground mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded p-3">⚠️ Somente o setor CCO pode alterar as células de estocagem. As informações são atualizadas em tempo real.</p>
               {storageUpdatedAt && (<div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded"><p className="text-sm"><span className="font-semibold text-primary">Última atualização:</span> <span className="text-muted-foreground">{storageUpdatedAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })} às {storageUpdatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span> {" • "} <span className="font-medium text-primary">{storageUpdatedBy} ({storageUpdatedByDepartment?.toUpperCase()})</span></p></div>)}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="space-y-4"><h3 className="text-lg font-semibold">Lado TEG</h3><div className="space-y-3"><div><label className="text-sm font-medium mb-2 block">Rodovia - Tombadores 01 e 06:</label><Input id="teg-road" value={tegRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div><div><label className="text-sm font-medium mb-2 block">Rodovia - Tombador 07:</label><Input id="teg-road-tombador" value={tegRoadTombador} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div><div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 01:</label><Input id="teg-railway-moega-01" value={tegRailwayMoega01} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div><div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 02:</label><Input id="teg-railway-moega-02" value={tegRailwayMoega02} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div></div></div><div className="space-y-4"><h3 className="text-lg font-semibold">Lado TEAG</h3><div className="space-y-3"><div><label className="text-sm font-medium mb-2 block">Rodovia:</label><Input id="teag-road" value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div><div><label className="text-sm font-medium mb-2 block">Ferrovia:</label><Input id="teag-railway" value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div></div></div></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Lado TEG</h3>
+                  <div className="space-y-3">
+                    <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombadores 01 e 06:</label><Input id="teg-road" value={tegRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombador 07:</label><Input id="teg-road-tombador" value={tegRoadTombador} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 01:</label><Input id="teg-railway-moega-01" value={tegRailwayMoega01} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 02:</label><Input id="teg-railway-moega-02" value={tegRailwayMoega02} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Lado TEAG</h3>
+                  <div className="space-y-3">
+                    <div><label className="text-sm font-medium mb-2 block">Rodovia:</label><Input value={teagRoad} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia:</label><Input value={teagRailway} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Rodovia - Tombador 05:</label><Input id="teag-road-tombador-05" value={teagRoadTombador05} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 03:</label><Input id="teag-railway-moega-03" value={teagRailwayMoega03} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 04:</label><Input id="teag-railway-moega-04" value={teagRailwayMoega04} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                    <div><label className="text-sm font-medium mb-2 block">Ferrovia - Moega 05:</label><Input id="teag-railway-moega-05" value={teagRailwayMoega05} placeholder="Aguardando..." disabled className="opacity-75 cursor-not-allowed" /></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

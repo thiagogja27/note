@@ -1,4 +1,6 @@
-import { getFirebaseDatabase } from "./firebase"
+'use client'
+
+import { db } from "./firebase"
 import { ref, push, set, onValue, update, get, query, orderByChild, equalTo } from "firebase/database"
 import type { PrivateMessage, PrivateChatContact } from "@/types/private-message"
 
@@ -11,7 +13,6 @@ export async function sendPrivateMessage(
   content: string,
 ): Promise<void> {
   try {
-    const db = getFirebaseDatabase()
     const messagesRef = ref(db, "privateMessages")
     const newMessageRef = push(messagesRef)
 
@@ -35,7 +36,6 @@ export async function sendPrivateMessage(
 
 export function listenToPrivateMessages(userId: string, callback: (messages: PrivateMessage[]) => void): () => void {
   try {
-    const db = getFirebaseDatabase()
     const messagesRef = ref(db, "privateMessages")
 
     const sentMessagesQuery = query(messagesRef, orderByChild('senderId'), equalTo(userId));
@@ -50,7 +50,6 @@ export function listenToPrivateMessages(userId: string, callback: (messages: Pri
             return {
                 id,
                 ...value,
-                // Fallback para data atual se a data do banco for inválida
                 createdAt: isNaN(createdAtDate.getTime()) ? new Date() : createdAtDate,
             };
         }) : [];
@@ -59,7 +58,6 @@ export function listenToPrivateMessages(userId: string, callback: (messages: Pri
     const combineAndSend = () => {
       const allMessages = [...sentMessages, ...receivedMessages];
       const uniqueMessages = Array.from(new Map(allMessages.map(m => [m.id, m])).values());
-      // Ordena pela data corretamente
       const sortedMessages = uniqueMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       callback(sortedMessages);
     };
@@ -91,7 +89,6 @@ export function listenToPrivateMessages(userId: string, callback: (messages: Pri
 
 export async function markMessageAsRead(messageId: string): Promise<void> {
   try {
-    const db = getFirebaseDatabase()
     const messageRef = ref(db, `privateMessages/${messageId}`)
     await update(messageRef, { read: true })
   } catch (error) {
@@ -106,7 +103,6 @@ export async function addPrivateChatContact(
   contactDepartment: string,
 ): Promise<void> {
   try {
-    const db = getFirebaseDatabase()
     const contactRef = ref(db, `privateChatContacts/${userId}/${contactUserId}`)
 
     const contact: PrivateChatContact = {
@@ -125,7 +121,6 @@ export async function addPrivateChatContact(
 
 export async function removePrivateChatContact(userId: string, contactUserId: string): Promise<void> {
   try {
-    const db = getFirebaseDatabase()
     const contactRef = ref(db, `privateChatContacts/${userId}/${contactUserId}`)
     await set(contactRef, null)
   } catch (error) {
@@ -139,7 +134,6 @@ export function listenToPrivateChatContacts(
   callback: (contacts: PrivateChatContact[]) => void,
 ): () => void {
   try {
-    const db = getFirebaseDatabase()
     const contactsRef = ref(db, `privateChatContacts/${userId}`)
 
     const unsubscribe = onValue(contactsRef, (snapshot) => {
@@ -162,7 +156,6 @@ export function listenToPrivateChatContacts(
 
 export async function getAllUsers(): Promise<Array<{ id: string; username: string; department: string }>> {
   try {
-    const db = getFirebaseDatabase()
     const usersRef = ref(db, "usuarios")
     const snapshot = await get(usersRef)
 

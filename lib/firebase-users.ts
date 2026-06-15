@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
 import { getAuth } from "firebase/auth"
-import { getFirebaseApp } from "./firebase"
+import { app } from "./firebase"
 
 export interface FirebaseAuthUser {
   uid: string
@@ -12,7 +12,6 @@ export interface FirebaseAuthUser {
 
 export async function getAllFirebaseAuthUsers(): Promise<FirebaseAuthUser[]> {
   try {
-    const app = getFirebaseApp()
     const auth = getAuth(app)
 
     // Note: listUsers is an Admin SDK function and won't work in client-side code

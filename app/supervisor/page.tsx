@@ -18,11 +18,13 @@ import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users } from 'lucide-react'
+import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users, MessageSquare, MessageCircle } from 'lucide-react'
 import { formatDistanceToNow } from "@/lib/format-date"
 import { RadarSummary } from "@/components/RadarSummary"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LiveClock } from "@/components/live-clock";
+import { PrivateChat } from "@/components/private-chat"
+import { useChat } from "@/contexts/chat-context"
 
 type ShiftWithAll = Shift | "Todos";
 
@@ -47,6 +49,7 @@ const STATUS_COLORS = {
 export default function SupervisorPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { openChat } = useChat()
 
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -143,7 +146,7 @@ export default function SupervisorPage() {
     if (task) {
       setEditingTask(task)
       setFormTitle(task.title); setFormDescription(task.description); setFormPriority(task.priority);
-      setFormShift(task.shift as ShiftWithAll); // Asserção para conformidade
+      setFormShift(task.shift as ShiftWithAll);
       setFormAssignedTo(task.assignedTo);
       setFormDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "");
     } else {
@@ -163,7 +166,7 @@ export default function SupervisorPage() {
         title: formTitle,
         description: formDescription,
         priority: formPriority,
-        shift: formShift as any, // <-- CORREÇÃO APLICADA AQUI
+        shift: formShift as any,
         assignedTo: formAssignedTo,
         dueDate: formDueDate ? new Date(formDueDate) : undefined,
       }
@@ -205,7 +208,7 @@ export default function SupervisorPage() {
       toast({ title: "Erro ao excluir anotação", variant: "destructive" })
     }
   }
-  
+
   const filteredTasks = tasks.filter((task) => {
     if (filterShift !== "all" && task.shift !== filterShift && task.shift !== "Todos") return false
     if (filterStatus !== "all" && task.status !== filterStatus) return false
@@ -238,6 +241,9 @@ export default function SupervisorPage() {
                 <LiveClock />
             </div>
             <div className="col-span-1 flex items-center justify-end gap-2">
+                <Button variant="outline" size="icon" onClick={() => openChat()} title="Chat Privado">
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
                 <ThemeToggle />
                 <Button variant="outline" onClick={handleLogout} className="gap-2"><LogOut className="h-4 w-4" /> Sair</Button>
             </div>
@@ -343,6 +349,7 @@ export default function SupervisorPage() {
           </TabsContent>
         </Tabs>
       </div>
+      {currentUser && <PrivateChat currentUser={currentUser} />}
       <Toaster />
     </div>
   )

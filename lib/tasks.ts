@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
 import { ref, onValue, set, push, update, remove, get } from "firebase/database"
-import { getFirebaseDatabase } from "./firebase"
+import { db } from "./firebase"
 import type { Task, TaskStatus } from "@/types/task"
 import type { Department } from "@/types/user"
 
@@ -9,18 +9,17 @@ const TASKS_COLLECTION = "tarefas"
 
 // Helper function to remove properties with undefined values
 function cleanupObject(obj: any) {
-  const newObj: any = {};
+  const newObj: any = {}
   for (const key in obj) {
     if (obj[key] !== undefined) {
-      newObj[key] = obj[key];
+      newObj[key] = obj[key]
     }
   }
-  return newObj;
+  return newObj
 }
 
 export function listenToTasks(callback: (tasks: Task[]) => void): () => void {
   try {
-    const db = getFirebaseDatabase()
     const tasksRef = ref(db, TASKS_COLLECTION)
 
     const unsubscribe = onValue(
@@ -70,14 +69,13 @@ export function listenToTasks(callback: (tasks: Task[]) => void): () => void {
 
 export function listenToUserTasks(username: string, callback: (tasks: Task[]) => void): () => void {
   return listenToTasks((allTasks) => {
-    const userTasks = allTasks.filter(task => task.assignedTo.includes(username));
-    callback(userTasks);
-  });
+    const userTasks = allTasks.filter((task) => task.assignedTo.includes(username))
+    callback(userTasks)
+  })
 }
 
 export async function getAllTasks(): Promise<Task[]> {
   try {
-    const db = getFirebaseDatabase()
     const tasksRef = ref(db, TASKS_COLLECTION)
     const snapshot = await get(tasksRef)
     const data = snapshot.val()
@@ -118,63 +116,59 @@ export async function addTask(
     assignedByDepartment: Department
   },
 ): Promise<Task> {
-  const db = getFirebaseDatabase()
   const tasksRef = ref(db, TASKS_COLLECTION)
   const newTaskRef = push(tasksRef)
 
   const now = new Date().toISOString()
-  
+
   const newTaskPayload = {
     ...taskData,
     dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
     completedAt: taskData.completedAt ? new Date(taskData.completedAt).toISOString() : null,
     createdAt: now,
     updatedAt: now,
-  };
+  }
 
-  const finalPayload = cleanupObject(newTaskPayload);
+  const finalPayload = cleanupObject(newTaskPayload)
 
-  await set(newTaskRef, finalPayload);
+  await set(newTaskRef, finalPayload)
 
   return {
     id: newTaskRef.key!,
     ...taskData,
     createdAt: new Date(now),
     updatedAt: new Date(now),
-  } as Task;
+  } as Task
 }
 
 export async function updateTask(
   id: string,
-  taskData: Partial<Omit<Task, "id" | "createdAt" | "assignedBy" | "assignedByDepartment"> >,
+  taskData: Partial<Omit<Task, "id" | "createdAt" | "assignedBy" | "assignedByDepartment">>,
 ): Promise<void> {
-    const db = getFirebaseDatabase();
-    const taskRef = ref(db, `${TASKS_COLLECTION}/${id}`);
+  const taskRef = ref(db, `${TASKS_COLLECTION}/${id}`)
 
-    const updatedAt = new Date().toISOString();
+  const updatedAt = new Date().toISOString()
 
-    const updatePayload: any = { ...taskData, updatedAt };
+  const updatePayload: any = { ...taskData, updatedAt }
 
-    if (taskData.hasOwnProperty('dueDate')) {
-        updatePayload.dueDate = taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null;
-    }
-    if (taskData.hasOwnProperty('completedAt')) {
-        updatePayload.completedAt = taskData.completedAt ? new Date(taskData.completedAt).toISOString() : null;
-    }
-    
-    const finalPayload = cleanupObject(updatePayload);
+  if (taskData.hasOwnProperty("dueDate")) {
+    updatePayload.dueDate = taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null
+  }
+  if (taskData.hasOwnProperty("completedAt")) {
+    updatePayload.completedAt = taskData.completedAt ? new Date(taskData.completedAt).toISOString() : null
+  }
 
-    await update(taskRef, finalPayload);
+  const finalPayload = cleanupObject(updatePayload)
+
+  await update(taskRef, finalPayload)
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const db = getFirebaseDatabase()
   const taskRef = ref(db, `${TASKS_COLLECTION}/${id}`)
   await remove(taskRef)
 }
 
 export async function updateTaskStatus(id: string, status: TaskStatus, completedBy?: string): Promise<void> {
-  const db = getFirebaseDatabase()
   const taskRef = ref(db, `${TASKS_COLLECTION}/${id}`)
 
   const now = new Date().toISOString()
@@ -185,5 +179,5 @@ export async function updateTaskStatus(id: string, status: TaskStatus, completed
     fieldsToUpdate.completedBy = completedBy
   }
 
-  await update(taskRef, fieldsToUpdate);
+  await update(taskRef, fieldsToUpdate)
 }

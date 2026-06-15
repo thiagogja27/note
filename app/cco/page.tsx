@@ -37,6 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveClock } from "@/components/live-clock";
 import { useChat } from "@/contexts/chat-context";
 import { PrivateChat } from "@/components/private-chat";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 
@@ -121,14 +122,25 @@ export default function CCOPage() {
     if (!currentUser || !storageSelection) return;
     const newSelection = { ...storageSelection, [field]: value };
     await saveStorageSelection({ ...newSelection, updatedBy: currentUser.username, updatedByDepartment: currentUser.department });
-    const fieldNames: Record<string, string> = { tegRoad: "TEG Rod. 01/06", tegRoadTombador: "TEG Rod. 07", tegRailwayMoega01: "TEG Ferr. 01", tegRailwayMoega02: "TEG Ferr. 02", teagRoad: "TEAG Rodovia", teagRailway: "TEAG Ferrovia" };
+    const fieldNames: Record<string, string> = { 
+      tegRoad: "TEG Rod. 01/06", 
+      tegRoadTombador: "TEG Rod. 07", 
+      tegRailwayMoega01: "TEG Ferr. 01", 
+      tegRailwayMoega02: "TEG Ferr. 02", 
+      teagRoad: "TEAG Rodovia",
+      teagRailway: "TEAG Ferrovia",
+      teagRoadTombador05: "TEAG Rod. 05", 
+      teagRailwayMoega03: "TEAG Ferr. 03",
+      teagRailwayMoega04: "TEAG Ferr. 04",
+      teagRailwayMoega05: "TEAG Ferr. 05"
+    };
     const alertMessage = `🚨 ALTERAÇÃO DE CÉLULA: ${fieldNames[field]} alterada para ${value}`;
     await addNote({ title: alertMessage, content: alertMessage, category: RADAR_CATEGORY, userId: currentUser.id, createdBy: currentUser.username, createdByDepartment: currentUser.department });
     toast({ title: "Estocagem Atualizada", description: `${fieldNames[field]} foi definida como ${value}.` });
   };
   
   const formatChanges = (changes: StorageLog['changes']) => {
-    return Object.entries(changes).filter(([, value]) => value).map(([key, value]) => `${key.replace('teg', 'TEG ').replace('teag', 'TEAG ').replace('Road', 'Rod.').replace('Railway', 'Ferr.').replace('Moega', 'M.')}: ${value}`).join(" | ") || "N/A";
+    return Object.entries(changes).filter(([, value]) => value).map(([key, value]) => `${key.replace('teg', 'TEG ').replace('teag', 'TEAG ').replace('Road', 'Rod.').replace('Railway', 'Ferr.').replace('Moega', 'M.').replace('Tombador', 'Tombador')}: ${value}`).join(" | ") || "N/A";
   };
   
   const handleAddOrUpdateNote = async (category: Category | 'RADAR', content: string, id?: string) => {
@@ -236,12 +248,80 @@ export default function CCOPage() {
                       <div className="space-y-4">
                           <h3 className="text-lg font-semibold">Lado TEAG</h3>
                           <div className="space-y-1.5">
-                             <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
-                             <Select id="teag-road" onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                              <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
+                              <Select onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}>
+                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="A3">A3</SelectItem>
+                                  <SelectItem value="B3">B3</SelectItem>
+                                  <SelectItem value="A4">A4</SelectItem>
+                                  <SelectItem value="parado">Parado</SelectItem>
+                                </SelectContent>
+                              </Select>
                           </div>
                           <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Ferrovia:</label>
-                              <Select id="teag-railway" onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                              <Select onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}>
+                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="A3">A3</SelectItem>
+                                  <SelectItem value="B3">B3</SelectItem>
+                                  <SelectItem value="A4">A4</SelectItem>
+                                  <SelectItem value="parado">Parado</SelectItem>
+                                </SelectContent>
+                              </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombador 05:</label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="w-full">
+                                  <Input disabled placeholder="Aguardando..." />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Em desenvolvimento. Em breve será liberado.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 03:</label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="w-full">
+                                  <Input disabled placeholder="Aguardando..." />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Em desenvolvimento. Em breve será liberado.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 04:</label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="w-full">
+                                  <Input disabled placeholder="Aguardando..." />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Em desenvolvimento. Em breve será liberado.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 05:</label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="w-full">
+                                  <Input disabled placeholder="Aguardando..." />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Em desenvolvimento. Em breve será liberado.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                       </div>
                   </div>

@@ -1,13 +1,10 @@
-"use client"
+'use client'
 
-import { getAuth, signInWithEmailAndPassword as firebaseSignIn, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword as firebaseSignIn, onAuthStateChanged } from "firebase/auth"
 import type { User, Department } from "@/types/user"
-import { getFirebaseApp } from "./firebase"; // Importa a função singleton
+import { app } from "./firebase" // Importa a instância do app
 
-// Obtém a instância única do Firebase e inicializa o Auth
-const firebaseApp = getFirebaseApp();
-const auth = getAuth(firebaseApp);
-
+const auth = getAuth(app)
 
 export interface FirebaseAuthUser {
   uid: string
@@ -35,9 +32,9 @@ function mapFirebaseError(errorCode: string): string {
 
 export async function signInWithEmailPassword(email: string, password: string): Promise<FirebaseAuthUser> {
   try {
-    const userCredential = await firebaseSignIn(auth, email, password);
-    const user = userCredential.user;
-    const idToken = await user.getIdToken();
+    const userCredential = await firebaseSignIn(auth, email, password)
+    const user = userCredential.user
+    const idToken = await user.getIdToken()
 
     return {
       uid: user.uid,
@@ -47,41 +44,40 @@ export async function signInWithEmailPassword(email: string, password: string): 
       refreshToken: user.refreshToken,
     }
   } catch (error: any) {
-    console.error("[v1] Erro do Firebase Auth SDK:", error.code, error.message);
-    throw new Error(mapFirebaseError(error.code));
+    console.error("[v1] Erro do Firebase Auth SDK:", error.code, error.message)
+    throw new Error(mapFirebaseError(error.code))
   }
 }
 
 export async function getUserInfo(idToken: string): Promise<FirebaseAuthUser | null> {
-    // Esta função pode precisar ser ajustada ou removida, 
-    // já que o estado de auth agora é gerenciado pelo SDK
-    return new Promise((resolve) => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            unsubscribe(); 
-            if (user) {
-                const currentIdToken = await user.getIdToken();
-                if (currentIdToken === idToken) {
-                    resolve({
-                        uid: user.uid,
-                        email: user.email,
-                        displayName: user.displayName,
-                        idToken: currentIdToken,
-                        refreshToken: user.refreshToken,
-                    });
-                } else {
-                    resolve(null); // O token não corresponde ao usuário atual
-                }
-            } else {
-                resolve(null);
-            }
-        });
-    });
+  // Esta função pode precisar ser ajustada ou removida,
+  // já que o estado de auth agora é gerenciado pelo SDK
+  return new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe()
+      if (user) {
+        const currentIdToken = await user.getIdToken()
+        if (currentIdToken === idToken) {
+          resolve({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            idToken: currentIdToken,
+            refreshToken: user.refreshToken,
+          })
+        } else {
+          resolve(null) // O token não corresponde ao usuário atual
+        }
+      } else {
+        resolve(null)
+      }
+    })
+  })
 }
-
 
 export function convertToAppUser(firebaseUser: FirebaseAuthUser, department: Department): User {
   if (!firebaseUser.email) {
-    throw new Error("O usuário do Firebase não tem um email.");
+    throw new Error("O usuário do Firebase não tem um email.")
   }
   return {
     id: firebaseUser.uid,
@@ -94,7 +90,7 @@ export function convertToAppUser(firebaseUser: FirebaseAuthUser, department: Dep
 
 export function saveAuthSession(firebaseUser: FirebaseAuthUser, department: Department): void {
   try {
-    if(firebaseUser.email) {
+    if (firebaseUser.email) {
       localStorage.setItem("firebaseAuthToken", firebaseUser.idToken)
       localStorage.setItem("firebaseRefreshToken", firebaseUser.refreshToken)
       localStorage.setItem("firebaseUserId", firebaseUser.uid)
@@ -109,29 +105,28 @@ export function saveAuthSession(firebaseUser: FirebaseAuthUser, department: Depa
 export async function loadAuthSession(): Promise<User | null> {
   return new Promise((resolve) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      unsubscribe();
+      unsubscribe()
       if (user) {
-        const department = (localStorage.getItem("userDepartment") as Department) || "balanca";
-        const idToken = await user.getIdToken();
+        const department = (localStorage.getItem("userDepartment") as Department) || "balanca"
+        const idToken = await user.getIdToken()
         const firebaseUser: FirebaseAuthUser = {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
           idToken: idToken,
           refreshToken: user.refreshToken,
-        };
-        resolve(convertToAppUser(firebaseUser, department));
+        }
+        resolve(convertToAppUser(firebaseUser, department))
       } else {
-        resolve(null);
+        resolve(null)
       }
-    });
-  });
+    })
+  })
 }
-
 
 export function clearAuthSession(): void {
   try {
-    auth.signOut(); // Usa o método do SDK para deslogar
+    auth.signOut() // Usa o método do SDK para deslogar
     localStorage.removeItem("firebaseAuthToken")
     localStorage.removeItem("firebaseRefreshToken")
     localStorage.removeItem("firebaseUserId")
