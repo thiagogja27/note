@@ -141,6 +141,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           </form>
         </div>
       </div>
+       <footer className="absolute bottom-5 text-center text-sm text-muted-foreground w-full">
+          © {new Date().getFullYear()} BalTech. Todos os direitos reservados.
+        </footer>
     </div>
   )
 }
