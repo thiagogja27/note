@@ -38,6 +38,7 @@ import { LiveClock } from "@/components/live-clock";
 import { useChat } from "@/contexts/chat-context";
 import { PrivateChat } from "@/components/private-chat";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AnimatedHeader } from "@/components/animated-header";
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 
@@ -192,8 +193,9 @@ export default function CCOPage() {
   if (!currentUser) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 max-w-[1600px]">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <AnimatedHeader />
+      <div className="container mx-auto px-4 pt-40 pb-6 max-w-[1600px]">
         <header className="mb-6 grid grid-cols-3 items-center">
           <div className="col-span-1">
             <h1 className="text-2xl font-bold">CCO - Centro de Controle Operacional</h1>

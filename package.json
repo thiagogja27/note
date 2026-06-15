@@ -41,6 +41,7 @@
     "dotenv": "^17.2.3",
     "firebase": "latest",
     "firebase-admin": "^13.6.0",
+    "framer-motion": "^12.40.0",
     "geist": "1.5.1",
     "lucide-react": "^0.454.0",
     "next": "16.0.7",

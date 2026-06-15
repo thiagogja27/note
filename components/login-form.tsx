@@ -1,39 +1,38 @@
-"use client"
+'use client'
 
-import type React from "react"
-import Image from "next/image";
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { BookOpen, LogIn } from "lucide-react"
-import { signInWithEmailPassword, saveAuthSession } from "@/lib/firebase-auth"
-import { getUser, saveOrUpdateUser } from "@/lib/realtime"
-import type { User } from "@/types/user"
-import { ThemeToggle } from "@/components/theme-toggle"
+import type React from 'react'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { BookOpen, LogIn } from 'lucide-react'
+import { signInWithEmailPassword, saveAuthSession } from '@/lib/firebase-auth'
+import { getUser, saveOrUpdateUser } from '@/lib/realtime'
+import type { User } from '@/types/user'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { AnimatedHeader } from '@/components/animated-header'
 
 interface LoginFormProps {
   onLogin: (user: User) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setError('')
 
     if (!email.trim()) {
-      setError("Digite o email")
+      setError('Digite o email')
       return
     }
 
     if (!password) {
-      setError("Digite a senha")
+      setError('Digite a senha')
       return
     }
 
@@ -46,15 +45,15 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       if (!appUser) {
         const newUser: User = {
           id: firebaseUser.uid,
-          username: firebaseUser.email?.split('@')[0] || "Novo Usuário",
-          role: "assistente",
-          department: "balanca",
+          username: firebaseUser.email?.split('@')[0] || 'Novo Usuário',
+          role: 'assistente',
+          department: 'balanca',
         }
         await saveOrUpdateUser(newUser)
         appUser = await getUser(firebaseUser.uid)
 
         if (!appUser) {
-          setError("Falha ao criar o perfil do usuário no banco de dados. Contate o suporte.")
+          setError('Falha ao criar o perfil do usuário no banco de dados. Contate o suporte.')
           setIsLoading(false)
           return
         }
@@ -62,34 +61,18 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
       saveAuthSession(firebaseUser, appUser.department)
       onLogin(appUser)
-      
     } catch (error: any) {
-      console.error("[v0] Erro detalhado ao fazer login:", error.message)
+      console.error('[v0] Erro detalhado ao fazer login:', error.message)
       setError(error.message)
-      setPassword("")
+      setPassword('')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-      <div className="absolute top-5 left-5">
-        <Image
-          src="/baltech-logo.png"
-          alt="Baltech Logo"
-          width={130} 
-          height={130}
-        />
-      </div>
-      <div className="absolute top-5 right-5">
-        <Image
-          src="/teag-logo.png"
-          alt="TEAG Logo"
-          width={130}
-          height={130}
-        />
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      <AnimatedHeader />
       <div className="w-full max-w-md">
         <div className="flex justify-end mb-4">
           <ThemeToggle />
@@ -113,7 +96,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 placeholder="Digite seu email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={error ? "border-destructive" : ""}
+                className={error ? 'border-destructive' : ''}
                 disabled={isLoading}
                 autoComplete="email"
               />
@@ -127,7 +110,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 placeholder="Digite sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={error ? "border-destructive" : ""}
+                className={error ? 'border-destructive' : ''}
                 disabled={isLoading}
                 autoComplete="current-password"
               />
@@ -136,14 +119,14 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
             <Button type="submit" className="w-full gap-2" disabled={isLoading}>
               <LogIn className="h-4 w-4" />
-              {isLoading ? "Validando..." : "Entrar"}
+              {isLoading ? 'Validando...' : 'Entrar'}
             </Button>
           </form>
         </div>
       </div>
-       <footer className="absolute bottom-5 text-center text-sm text-muted-foreground w-full">
-          © {new Date().getFullYear()} BalTech. Todos os direitos reservados.
-        </footer>
+      <footer className="absolute bottom-5 text-center text-sm text-muted-foreground w-full">
+        © {new Date().getFullYear()} BalTech. Todos os direitos reservados.
+      </footer>
     </div>
   )
 }
