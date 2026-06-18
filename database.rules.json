@@ -1,0 +1,54 @@
+{
+  "rules": {
+    "usuarios": {
+      ".indexOn": "department",
+      ".read": "root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin' || root.child('usuarios').child(auth.uid).child('department').val() === 'cco' || root.child('usuarios').child(auth.uid).child('department').val() === 'balanca'",
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "anotacoes": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "estocagem": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "storage_logs": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "tarefas": {
+      ".read": "root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin' || root.child('usuarios').child(auth.uid).child('department').val() === 'cco' || root.child('usuarios').child(auth.uid).child('department').val() === 'balanca'",
+      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin' || root.child('usuarios').child(auth.uid).child('department').val() === 'cco' || root.child('usuarios').child(auth.uid).child('department').val() === 'balanca'",
+      "$taskId": {
+        ".read": "root.child('user_tasks').child(auth.uid).hasChild($taskId) || (root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin' || root.child('usuarios').child(auth.uid).child('department').val() === 'cco' || root.child('usuarios').child(auth.uid).child('department').val() === 'balanca')"
+      }
+    },
+    "user_tasks": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin'"
+      }
+    },
+    "privateMessages": {
+      ".read": "auth != null && ((query.orderByChild == 'senderId' && query.equalTo == auth.uid) || (query.orderByChild == 'recipientId' && query.equalTo == auth.uid))",
+      ".write": "auth != null",
+      "$messageId": {
+        ".validate": "newData.hasChildren(['senderId', 'recipientId', 'content', 'createdAt']) && !data.exists() && newData.child('senderId').val() === auth.uid"
+      },
+      ".indexOn": [
+        "senderId",
+        "recipientId"
+      ]
+    },
+    "privateChatContacts": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    }
+  }
+}

@@ -1,5 +1,3 @@
-'use client'
-
 import { db } from "./firebase"
 import { ref, push, set, onValue, update, get, query, orderByChild, equalTo } from "firebase/database"
 import type { PrivateMessage, PrivateChatContact } from "@/types/private-message"
@@ -50,6 +48,7 @@ export function listenToPrivateMessages(userId: string, callback: (messages: Pri
             return {
                 id,
                 ...value,
+                // Fallback para data atual se a data do banco for inválida
                 createdAt: isNaN(createdAtDate.getTime()) ? new Date() : createdAtDate,
             };
         }) : [];
@@ -58,6 +57,7 @@ export function listenToPrivateMessages(userId: string, callback: (messages: Pri
     const combineAndSend = () => {
       const allMessages = [...sentMessages, ...receivedMessages];
       const uniqueMessages = Array.from(new Map(allMessages.map(m => [m.id, m])).values());
+      // Ordena pela data corretamente
       const sortedMessages = uniqueMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       callback(sortedMessages);
     };
