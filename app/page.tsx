@@ -38,6 +38,7 @@ import { useChat } from "@/contexts/chat-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveClock } from "@/components/live-clock";
 import { ExternalLinks } from "@/components/external-links";
+import { AnimatedHeader } from "@/components/animated-header";
 
 export default function NotesApp() {
   const router = useRouter()
@@ -243,7 +244,8 @@ export default function NotesApp() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <AnimatedHeader />
       <div className="container mx-auto px-4 py-6 max-w-[1400px]">
         <header className="mb-6 grid grid-cols-3 items-center">
           <div className="col-span-1 flex items-center gap-3">
@@ -390,9 +392,9 @@ export default function NotesApp() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Lado TEAG</h3>
                   <div className="space-y-3">
-                    <div><label className="text-sm font-medium mb-1 block">Rodovia:</label><Input id="teag-road" value={storage?.teagRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-1 block">Ferrovia:</label><Input id="teag-railway" value={storage?.teagRailway || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
-                    <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 05:</label><Input id="teag-road-tombador-05" value={storage?.teagRoadTombador05 || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
+                    {/* <div><label className="text-sm font-medium mb-1 block">Rodovia:</label><Input id="teag-road" value={storage?.teagRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div> */}
+                    {/* <div><label className="text-sm font-medium mb-1 block">Ferrovia:</label><Input id="teag-railway" value={storage?.teagRailway || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div> */}
+                    <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 05:</label><Input id="teag-road-tumbador-05" value={storage?.teagRoadTombador05 || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 03:</label><div className="flex gap-2"><Input id="teag-railway-moega-03-cell" value={storage?.teagRailwayMoega03 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-03-operation" value={formatOperation(storage?.teagRailwayMoega03Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 04:</label><div className="flex gap-2"><Input id="teag-railway-moega-04-cell" value={storage?.teagRailwayMoega04 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-04-operation" value={formatOperation(storage?.teagRailwayMoega04Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 05:</label><div className="flex gap-2"><Input id="teag-railway-moega-05-cell" value={storage?.teagRailwayMoega05 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-05-operation" value={formatOperation(storage?.teagRailwayMoega05Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
