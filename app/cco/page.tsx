@@ -278,28 +278,28 @@ export default function CCOPage() {
                           <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 01:</label>
                               <div className="flex gap-2">
-                                <Select id="teg-railway-moega-01" onValueChange={(v) => handleStorageChange("tegRailwayMoega01", v)} value={storageSelection?.tegRailwayMoega01 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teg-railway-moega-01-cell" onValueChange={(v) => handleStorageChange("tegRailwayMoega01", v)} value={storageSelection?.tegRailwayMoega01 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                                 <Select id="teg-railway-moega-01-operation" onValueChange={(v) => handleStorageChange("tegRailwayMoega01Operation", v)} value={storageSelection?.tegRailwayMoega01Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                               </div>
                           </div>
                           <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 02:</label>
                               <div className="flex gap-2">
-                                <Select id="teg-railway-moega-02" onValueChange={(v) => handleStorageChange("tegRailwayMoega02", v)} value={storageSelection?.tegRailwayMoega02 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teg-railway-moega-02-cell" onValueChange={(v) => handleStorageChange("tegRailwayMoega02", v)} value={storageSelection?.tegRailwayMoega02 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A1">A1</SelectItem><SelectItem value="B1">B1</SelectItem><SelectItem value="C1">C1</SelectItem><SelectItem value="A2">A2</SelectItem><SelectItem value="B2">B2</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                                 <Select id="teg-railway-moega-02-operation" onValueChange={(v) => handleStorageChange("tegRailwayMoega02Operation", v)} value={storageSelection?.tegRailwayMoega02Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                               </div>
                           </div>
                       </div>
                       <div className="space-y-4">
                           <h3 className="text-lg font-semibold">Lado TEAG</h3>
-                          <div className="space-y-1.5">
+                          {/* <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Rodovia:</label>
                               <Select id="teag-road" onValueChange={(v) => handleStorageChange("teagRoad", v)} value={storageSelection?.teagRoad || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                          </div>
-                          <div className="space-y-1.5">
+                          </div> */}
+                          {/* <div className="space-y-1.5">
                               <label className="text-sm font-medium text-muted-foreground">Ferrovia:</label>
                               <Select id="teag-railway" onValueChange={(v) => handleStorageChange("teagRailway", v)} value={storageSelection?.teagRailway || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
-                          </div>
+                          </div> */}
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombador 05:</label>
                             <Select id="teag-road-tombador-05" onValueChange={(v) => handleStorageChange("teagRoadTombador05", v)} value={storageSelection?.teagRoadTombador05 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
@@ -307,21 +307,21 @@ export default function CCOPage() {
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 03:</label>
                              <div className="flex gap-2">
-                                <Select id="teag-railway-moega-03" onValueChange={(v) => handleStorageChange("teagRailwayMoega03", v)} value={storageSelection?.teagRailwayMoega03 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teag-railway-moega-03-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega03", v)} value={storageSelection?.teagRailwayMoega03 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                                 <Select id="teag-railway-moega-03-operation" onValueChange={(v) => handleStorageChange("teagRailwayMoega03Operation", v)} value={storageSelection?.teagRailwayMoega03Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                             </div>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 04:</label>
                              <div className="flex gap-2">
-                                <Select id="teag-railway-moega-04" onValueChange={(v) => handleStorageChange("teagRailwayMoega04", v)} value={storageSelection?.teagRailwayMoega04 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teag-railway-moega-04-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega04", v)} value={storageSelection?.teagRailwayMoega04 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                                 <Select id="teag-railway-moega-04-operation" onValueChange={(v) => handleStorageChange("teagRailwayMoega04Operation", v)} value={storageSelection?.teagRailwayMoega04Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                             </div>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 05:</label>
                              <div className="flex gap-2">
-                                <Select id="teag-railway-moega-05" onValueChange={(v) => handleStorageChange("teagRailwayMoega05", v)} value={storageSelection?.teagRailwayMoega05 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teag-railway-moega-05-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega05", v)} value={storageSelection?.teagRailwayMoega05 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
                                 <Select id="teag-railway-moega-05-operation" onValueChange={(v) => handleStorageChange("teagRailwayMoega05Operation", v)} value={storageSelection?.teagRailwayMoega05Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                             </div>
                           </div>
@@ -333,9 +333,9 @@ export default function CCOPage() {
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                   <h2 className="text-xl font-semibold text-primary">Histórico de Alterações</h2>
                   <div className="flex flex-wrap items-center gap-2">
-                      <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-auto" />
+                      <Input id="history-start-date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-auto" />
                       <span className="text-muted-foreground">até</span>
-                      <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-auto" />
+                      <Input id="history-end-date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-auto" />
                       <Button onClick={handleExport} disabled={storageLogs.length === 0} variant="outline" size="sm" className="gap-2">
                         <Download className="h-4 w-4" />
                         Exportar Excel
@@ -377,7 +377,7 @@ export default function CCOPage() {
             <div className="bg-card border-2 border-primary rounded-lg p-6 my-6">
               <h2 className="text-xl font-semibold mb-3 text-primary">RADAR - Área Compartilhada</h2>
               <div className="flex gap-2 mb-4">
-                <Input placeholder="Adicionar item importante..." value={newRadarInput} onChange={(e) => setNewRadarInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddOrUpdateNote('RADAR', newRadarInput)} />
+                <Input id="radar-new-item" placeholder="Adicionar item importante..." value={newRadarInput} onChange={(e) => setNewRadarInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddOrUpdateNote('RADAR', newRadarInput)} />
                 <Button onClick={() => handleAddOrUpdateNote('RADAR', newRadarInput)}><Plus className="h-4 w-4" /></Button>
               </div>
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
@@ -402,7 +402,7 @@ export default function CCOPage() {
                 <div key={category} className="bg-card border rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-3">{category}</h2>
                   <div className="flex gap-2 mb-4">
-                    <Input placeholder={`Adicionar em ${category}...`} value={newNoteInputs[category]} onChange={(e) => setNewNoteInputs(prev => ({...prev, [category]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleAddOrUpdateNote(category, newNoteInputs[category])}/>
+                    <Input id={`new-note-input-${category.replace(/\s+/g, '-').toLowerCase()}`} placeholder={`Adicionar em ${category}...`} value={newNoteInputs[category]} onChange={(e) => setNewNoteInputs(prev => ({...prev, [category]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleAddOrUpdateNote(category, newNoteInputs[category])}/>
                     <Button onClick={() => handleAddOrUpdateNote(category, newNoteInputs[category])}><Plus className="h-4 w-4" /></Button>
                   </div>
                   <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
@@ -411,6 +411,7 @@ export default function CCOPage() {
                         {editingNote?.id === note.id ? (
                           <div className="space-y-2">
                             <Textarea
+                              id={`edit-note-textarea-${note.id}`}
                               value={editingNote.content}
                               onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
                               className="min-h-[60px]"
@@ -423,7 +424,7 @@ export default function CCOPage() {
                         ) : (
                           <>
                             <div className="flex items-start gap-3 mb-2">
-                              <Checkbox checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
+                              <Checkbox id={`note-checkbox-${note.id}`} checked={note.completed || false} onCheckedChange={() => handleToggle(note)} className="mt-0.5" />
                               <p className={`text-sm flex-1 ${note.completed ? "line-through text-muted-foreground" : ""}`}>{note.content}</p>
                             </div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
