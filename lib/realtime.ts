@@ -6,10 +6,12 @@ import type { Note } from "@/types/note"
 import { RADAR_CATEGORY, INFO_CATEGORY } from "@/types/note"
 import type { Department } from "@/types/user"
 import type { StorageSelection, StorageLog } from "@/types/storage"
+import type { SpoutTrack } from "@/types/spout-track"
 
 const COLLECTION_NAME = "anotacoes"
 const STORAGE_COLLECTION = "estocagem"
 const STORAGE_LOGS_COLLECTION = "storage_logs"
+const SPOUT_TRACKS_COLLECTION = "spout_tracks"
 const STORAGE_DOC_ID = "current"
 const USERS_COLLECTION = "usuarios"
 
@@ -216,6 +218,46 @@ export async function saveStorageSelection(
     };
     await set(logRef, newLog);
   }
+}
+
+export async function saveSpoutTrack(
+  spoutTrack: Omit<SpoutTrack, "id" | "operator"> & { operator: string }
+): Promise<void> {
+  const spoutTrackRef = push(ref(db, SPOUT_TRACKS_COLLECTION));
+  await set(spoutTrackRef, spoutTrack);
+}
+
+export async function updateSpoutTrack(
+  id: string,
+  spoutTrackData: Partial<Omit<SpoutTrack, "id">>
+): Promise<void> {
+  const spoutTrackRef = ref(db, `${SPOUT_TRACKS_COLLECTION}/${id}`);
+  await update(spoutTrackRef, cleanupObject(spoutTrackData));
+}
+
+export async function deleteSpoutTrack(id: string): Promise<void> {
+  const spoutTrackRef = ref(db, `${SPOUT_TRACKS_COLLECTION}/${id}`);
+  await remove(spoutTrackRef);
+}
+
+export function listenToSpoutTrack(callback: (spoutTracks: SpoutTrack[]) => void): () => void {
+  const spoutTracksRef = ref(db, SPOUT_TRACKS_COLLECTION);
+  const unsubscribe = onValue(spoutTracksRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+      callback([]);
+      return;
+    }
+    const spoutTracks: SpoutTrack[] = Object.entries(data).map(([id, value]: any) => ({
+      id,
+      ...value,
+      startTimestamp: new Date(value.startTimestamp),
+      endTimestamp: new Date(value.endTimestamp),
+    }));
+    spoutTracks.sort((a, b) => new Date(b.endTimestamp).getTime() - new Date(a.endTimestamp).getTime());
+    callback(spoutTracks);
+  });
+  return unsubscribe;
 }
 
 export async function saveOrUpdateUser(user: any): Promise<void> {

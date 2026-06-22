@@ -14,11 +14,15 @@
     },
     "estocagem": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
     },
     "storage_logs": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
+    },
+    "spout_tracks": {
+      ".read": "auth != null",
+      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
     },
     "tarefas": {
       ".read": "root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin' || root.child('usuarios').child(auth.uid).child('department').val() === 'cco' || root.child('usuarios').child(auth.uid).child('department').val() === 'balanca'",
@@ -49,6 +53,10 @@
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"
       }
+    },
+    "balancas": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 }

@@ -1,24 +1,25 @@
-"use client"
-
 import * as XLSX from 'xlsx';
-import type { StorageLog } from '@/types/storage';
+import type { StorageLog } from "@/types/storage";
+import type { SpoutTrack } from "@/types/spout-track";
 
-// Define um tipo para os dados que serão exportados para tornar o código mais legível
+/**
+ * Define a estrutura dos dados a serem exportados, onde cada chave é um cabeçalho de coluna.
+ */
 type ExcelExportData = {
-    'Data/Hora': string;
-    'Usuário': string;
-    'Departamento': string;
-    'TEG Rod. 01-06': string;
-    'TEG Rod. 07': string;
-    'TEG Ferr. Moega 01': string;
-    'TEG Ferr. Moega 02': string;
-    'TEAG Rodovia': string;
-    'TEAG Ferrovia': string;
-    'TEAG Rod. Tombador 05': string;
-    'TEAG Ferr. Moega 03': string;
-    'TEAG Ferr. Moega 04': string;
-    'TEAG Ferr. Moega 05': string;
+  [key: string]: string | number | boolean | null | undefined;
 };
+
+/**
+ * Função auxiliar para criar e fazer o download de um ficheiro Excel.
+ * @param data Os dados a serem escritos no ficheiro.
+ * @param fileName O nome do ficheiro a ser gerado.
+ */
+function downloadExcel(data: ExcelExportData[], fileName: string) {
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+}
 
 /**
  * Exporta um array de logs de estocagem para um ficheiro Excel.
@@ -26,7 +27,6 @@ type ExcelExportData = {
  * @param fileName O nome do ficheiro a ser gerado (sem a extensão .xlsx).
  */
 export function exportStorageLogsToExcel(logs: StorageLog[], fileName: string): void {
-  // 1. Mapeia os dados dos logs para o formato de exportação, que servirá como as linhas da tabela
   const dataToExport: ExcelExportData[] = logs.map(log => ({
     'Data/Hora': new Date(log.timestamp).toLocaleString('pt-BR'),
     'Usuário': log.changedBy,
@@ -41,33 +41,48 @@ export function exportStorageLogsToExcel(logs: StorageLog[], fileName: string): 
     'TEAG Ferr. Moega 03': log.changes.teagRailwayMoega03 || '--',
     'TEAG Ferr. Moega 04': log.changes.teagRailwayMoega04 || '--',
     'TEAG Ferr. Moega 05': log.changes.teagRailwayMoega05 || '--',
+    'Op. TEG M.01': log.changes.tegRailwayMoega01Operation === 'descarga-vagao' ? 'Desc. Vagão' : log.changes.tegRailwayMoega01Operation === 'descarga-caminhao' ? 'Desc. Caminhão' : '--',
+    'Op. TEG M.02': log.changes.tegRailwayMoega02Operation === 'descarga-vagao' ? 'Desc. Vagão' : log.changes.tegRailwayMoega02Operation === 'descarga-caminhao' ? 'Desc. Caminhão' : '--',
+    'Op. TEAG M.03': log.changes.teagRailwayMoega03Operation === 'descarga-vagao' ? 'Desc. Vagão' : log.changes.teagRailwayMoega03Operation === 'descarga-caminhao' ? 'Desc. Caminhão' : '--',
+    'Op. TEAG M.04': log.changes.teagRailwayMoega04Operation === 'descarga-vagao' ? 'Desc. Vagão' : log.changes.teagRailwayMoega04Operation === 'descarga-caminhao' ? 'Desc. Caminhão' : '--',
+    'Op. TEAG M.05': log.changes.teagRailwayMoega05Operation === 'descarga-vagao' ? 'Desc. Vagão' : log.changes.teagRailwayMoega05Operation === 'descarga-caminhao' ? 'Desc. Caminhão' : '--',
   }));
+  downloadExcel(dataToExport, fileName);
+}
 
-  // 2. Cria uma nova folha de cálculo (worksheet) a partir dos dados mapeados
-  const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+/**
+ * Calcula a duração entre duas datas e a formata como "Xh Ym".
+ */
+const formatDuration = (start: string, end: string): string => {
+    const durationMs = new Date(end).getTime() - new Date(start).getTime();
+    if (durationMs < 0) return "0m";
+    const totalMinutes = Math.floor(durationMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+  
 
-  // 3. (Opcional) Ajusta a largura das colunas para melhor visualização
-  const columnWidths = [
-    { wch: 20 }, // Data/Hora
-    { wch: 25 }, // Usuário
-    { wch: 15 }, // Departamento
-    { wch: 20 }, // TEG Rod. 01-06
-    { wch: 20 }, // TEG Rod. 07
-    { wch: 20 }, // TEG Ferr. Moega 01
-    { wch: 20 }, // TEG Ferr. Moega 02
-    { wch: 20 }, // TEAG Rodovia
-    { wch: 20 }, // TEAG Ferrovia
-    { wch: 25 }, // TEAG Rod. Tombador 05
-    { wch: 25 }, // TEAG Ferr. Moega 03
-    { wch: 25 }, // TEAG Ferr. Moega 04
-    { wch: 25 }, // TEAG Ferr. Moega 05
-  ];
-  worksheet['!cols'] = columnWidths;
-
-  // 4. Cria um novo livro (workbook) e adiciona a nossa folha de cálculo a ele
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico de Estocagem');
-
-  // 5. Gera o ficheiro Excel e aciona o download no navegador do utilizador
-  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+/**
+ * Exporta um array de registros de bicas para um ficheiro Excel.
+ * @param tracks Os dados do histórico de bicas.
+ * @param fileName O nome do ficheiro a ser gerado (sem a extensão .xlsx).
+ */
+export function exportSpoutTracksToExcel(tracks: SpoutTrack[], fileName: string): void {
+  const dataToExport: ExcelExportData[] = tracks.map(track => ({
+    'Ocorrência': track.isOccurrence ? 'Sim' : 'Não',
+    'Bica(s)': track.spoutNumber,
+    'Produto': track.product,
+    'Destino': track.destination,
+    'Célula': track.cell,
+    'Início': new Date(track.startTimestamp).toLocaleString('pt-BR'),
+    'Fim': new Date(track.endTimestamp).toLocaleString('pt-BR'),
+    'Duração': formatDuration(track.startTimestamp, track.endTimestamp),
+    'Observações': track.observations || '--',
+    'Operador': track.operator,
+  }));
+  downloadExcel(dataToExport, fileName);
 }
