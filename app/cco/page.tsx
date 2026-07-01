@@ -49,6 +49,10 @@ import { TimelineBar } from "@/app/components/timeline-bar";
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 const TEG_CELLS = ["A1", "B1", "C1", "A2", "B2"];
 const TEAG_CELLS = ["A3", "B3", "A4"];
+const TEG_BELTS = ["BC205A", "TC203", "TC204", "TC212"];
+const TEAG_BELTS = ["BC4001A", "BC5001A"];
+const TEG_UNLOADING_POINTS = ["TD1", "TD6", "TD7", "Moega 1", "Moega 2"];
+const TEAG_UNLOADING_POINTS = ["TD5", "Moega 3", "Moega 4", "Moega 5"];
 const PRODUCT_OPTIONS = ["Soja", "Açúcar", "Milho"];
 
 export default function CCOPage() {
@@ -80,6 +84,8 @@ export default function CCOPage() {
   const [spoutNumber, setSpoutNumber] = useState("");
   const [spoutDestination, setSpoutDestination] = useState<'TEAG' | 'TEG' | "">("");
   const [spoutCell, setSpoutCell] = useState("");
+  const [spoutBelt, setSpoutBelt] = useState("");
+  const [spoutUnloadingPoint, setSpoutUnloadingPoint] = useState("");
   const [spoutProduct, setSpoutProduct] = useState("");
   const [spoutStartDate, setSpoutStartDate] = useState("");
   const [spoutStartTime, setSpoutStartTime] = useState("");
@@ -181,7 +187,7 @@ export default function CCOPage() {
   };
 
   const handleSaveSpoutTrack = async () => {
-    if (!spoutNumber.trim() || !spoutDestination || !spoutCell || !spoutProduct.trim() || !spoutStartDate || !spoutStartTime || !spoutEndDate || !spoutEndTime || !currentUser) {
+    if (!spoutNumber.trim() || !spoutDestination || !spoutCell || !spoutUnloadingPoint.trim() || !spoutProduct.trim() || !spoutStartDate || !spoutStartTime || !spoutEndDate || !spoutEndTime || !currentUser) {
       toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
       return;
     }
@@ -194,6 +200,8 @@ export default function CCOPage() {
         spoutNumber,
         destination: spoutDestination as 'TEAG' | 'TEG',
         cell: spoutCell,
+        belt: spoutBelt,
+        unloadingPoint: spoutUnloadingPoint,
         product: spoutProduct,
         operator: currentUser.username,
         startTimestamp,
@@ -205,6 +213,8 @@ export default function CCOPage() {
       setSpoutNumber("");
       setSpoutDestination("");
       setSpoutCell("");
+      setSpoutBelt("");
+      setSpoutUnloadingPoint("");
       setSpoutProduct("");
       setSpoutStartDate("");
       setSpoutStartTime("");
@@ -523,19 +533,31 @@ export default function CCOPage() {
             <div className="space-y-6 mt-6">
               <div className="bg-card border rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-4 text-primary">Rastreabilidade de Bicas</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-x-8 gap-y-4 mb-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-muted-foreground">Bica(s)</label>
                       <Input placeholder="Ex: 1, 2, 5-8" value={spoutNumber} onChange={(e) => setSpoutNumber(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-muted-foreground">Destino</label>
-                      <Select onValueChange={(v) => { setSpoutDestination(v as any); setSpoutCell(""); }} value={spoutDestination}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="TEAG">Lado TEAG</SelectItem><SelectItem value="TEG">Lado TEG</SelectItem></SelectContent></Select>
+                      <Select onValueChange={(v) => { setSpoutDestination(v as any); setSpoutCell(""); setSpoutBelt(""); setSpoutUnloadingPoint(""); }} value={spoutDestination}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="TEAG">Lado TEAG</SelectItem><SelectItem value="TEG">Lado TEG</SelectItem></SelectContent></Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-muted-foreground">Local de Descarga</label>
+                      <Select onValueChange={(v) => setSpoutUnloadingPoint(v)} value={spoutUnloadingPoint} disabled={!spoutDestination}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>
+                        {(spoutDestination === 'TEG' ? TEG_UNLOADING_POINTS : TEAG_UNLOADING_POINTS).map(point => <SelectItem key={point} value={point}>{point}</SelectItem>)}
+                      </SelectContent></Select>
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-muted-foreground">Célula</label>
                       <Select onValueChange={(v) => setSpoutCell(v)} value={spoutCell} disabled={!spoutDestination}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>
                         {(spoutDestination === 'TEG' ? TEG_CELLS : TEAG_CELLS).map(cell => <SelectItem key={cell} value={cell}>{cell}</SelectItem>)}
+                      </SelectContent></Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-muted-foreground">Correia</label>
+                      <Select onValueChange={(v) => setSpoutBelt(v)} value={spoutBelt} disabled={!spoutDestination}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>
+                        {(spoutDestination === 'TEG' ? TEG_BELTS : TEAG_BELTS).map(belt => <SelectItem key={belt} value={belt}>{belt}</SelectItem>)}
                       </SelectContent></Select>
                     </div>
                     <div className="space-y-1.5">
@@ -592,7 +614,9 @@ export default function CCOPage() {
                         <th scope="col" className="w-24 px-4 py-3">Bica(s)</th>
                         <th scope="col" className="w-28 px-4 py-3">Produto</th>
                         <th scope="col" className="w-24 px-4 py-3">Destino</th>
+                        <th scope="col" className="w-32 px-4 py-3">Local Descarga</th>
                         <th scope="col" className="w-24 px-4 py-3">Célula</th>
+                        <th scope="col" className="w-24 px-4 py-3">Correia</th>
                         <th scope="col" className="w-40 px-4 py-3">Início</th>
                         <th scope="col" className="w-40 px-4 py-3">Fim</th>
                         <th scope="col" className="w-40 px-4 py-3">Duração</th>
@@ -608,8 +632,10 @@ export default function CCOPage() {
                             <td className="px-2 py-2 text-center align-middle"><Checkbox checked={editingSpoutTrack.isOccurrence} onCheckedChange={(checked) => setEditingSpoutTrack(prev => ({...prev, isOccurrence: !!checked}))}/></td>
                             <td className="px-2 py-2"><Input value={editingSpoutTrack.spoutNumber || ''} onChange={(e) => setEditingSpoutTrack(prev => ({...prev, spoutNumber: e.target.value}))} /></td>
                             <td className="px-2 py-2"><Select value={editingSpoutTrack.product || ""} onValueChange={(v) => setEditingSpoutTrack(prev => ({...prev, product: v}))}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{PRODUCT_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></td>
-                            <td className="px-2 py-2"><Select value={editingSpoutTrack.destination || ""} onValueChange={(v) => setEditingSpoutTrack(prev => ({...prev, destination: v as any, cell: ''}))}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="TEG">TEG</SelectItem><SelectItem value="TEAG">TEAG</SelectItem></SelectContent></Select></td>
+                            <td className="px-2 py-2"><Select value={editingSpoutTrack.destination || ""} onValueChange={(v) => setEditingSpoutTrack(prev => ({...prev, destination: v as any, cell: '', belt: '', unloadingPoint: ''}))}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="TEG">TEG</SelectItem><SelectItem value="TEAG">TEAG</SelectItem></SelectContent></Select></td>
+                            <td className="px-2 py-2"><Select value={editingSpoutTrack.unloadingPoint || ""} onValueChange={(v) => setEditingSpoutTrack(prev => ({...prev, unloadingPoint: v}))} disabled={!editingSpoutTrack.destination}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{(editingSpoutTrack.destination === 'TEG' ? TEG_UNLOADING_POINTS : TEAG_UNLOADING_POINTS).map(point => <SelectItem key={point} value={point}>{point}</SelectItem>)}</SelectContent></Select></td>
                             <td className="px-2 py-2"><Select value={editingSpoutTrack.cell || ""} onValueChange={(v) => setEditingSpoutTrack(prev => ({...prev, cell: v}))} disabled={!editingSpoutTrack.destination}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{(editingSpoutTrack.destination === 'TEG' ? TEG_CELLS : TEAG_CELLS).map(cell => <SelectItem key={cell} value={cell}>{cell}</SelectItem>)}</SelectContent></Select></td>
+                            <td className="px-2 py-2"><Select value={editingSpoutTrack.belt || ""} onValueChange={(v) => setEditingSpoutTrack(prev => ({...prev, belt: v}))} disabled={!editingSpoutTrack.destination}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{(editingSpoutTrack.destination === 'TEG' ? TEG_BELTS : TEAG_BELTS).map(belt => <SelectItem key={belt} value={belt}>{belt}</SelectItem>)}</SelectContent></Select></td>
                             <td className="px-2 py-2"><Input type="datetime-local" value={`${editingSpoutTrack.spoutStartDate}T${editingSpoutTrack.spoutStartTime}` || ''} onChange={(e) => { const [date, time] = e.target.value.split('T'); setEditingSpoutTrack(prev => ({ ...prev, spoutStartDate: date, spoutStartTime: time })); }} /></td>
                             <td className="px-2 py-2"><Input type="datetime-local" value={`${editingSpoutTrack.spoutEndDate}T${editingSpoutTrack.spoutEndTime}` || ''} onChange={(e) => { const [date, time] = e.target.value.split('T'); setEditingSpoutTrack(prev => ({ ...prev, spoutEndDate: date, spoutEndTime: time })); }} /></td>
                             <td className="px-2 py-2">-</td>
@@ -628,7 +654,9 @@ export default function CCOPage() {
                             <td className="px-4 py-2">{track.spoutNumber}</td>
                             <td className="px-4 py-2">{track.product}</td>
                             <td className="px-4 py-2">{track.destination}</td>
+                            <td className="px-4 py-2">{track.unloadingPoint || "-"}</td>
                             <td className="px-4 py-2">{track.cell}</td>
+                            <td className="px-4 py-2">{track.belt || "-"}</td>
                             <td className="px-4 py-2 font-medium whitespace-nowrap text-xs">{new Date(track.startTimestamp).toLocaleString("pt-BR")}</td>
                             <td className="px-4 py-2 font-medium whitespace-nowrap text-xs">{new Date(track.endTimestamp).toLocaleString("pt-BR")}</td>
                             <td className="px-4 py-2"><TimelineBar start={track.startTimestamp} end={track.endTimestamp} min={timelineBounds.min} max={timelineBounds.max} /></td>
@@ -644,7 +672,7 @@ export default function CCOPage() {
                          )
                       ))}
                       {filteredSpoutTracks.length === 0 && (
-                        <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Nenhum registro encontrado.</td></tr>
+                        <tr><td colSpan={13} className="text-center py-8 text-muted-foreground">Nenhum registro encontrado.</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -690,7 +718,7 @@ export default function CCOPage() {
                 <div key={category} className="bg-card border rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-3">{category}</h2>
                   <div className="flex gap-2 mb-4">
-                    <Input id={`new-note-input-${category.replace(/\s+/g, '-').toLowerCase()}`} placeholder={`Adicionar em ${category}...`} value={newNoteInputs[category]} onChange={(e) => setNewNoteInputs(prev => ({...prev, [category]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleAddOrUpdateNote(category, newNoteInputs[category])}/>
+                    <Input id={`new-note-input-${category.replace(/\s+/g, '-')}`} placeholder={`Adicionar em ${category}...`} value={newNoteInputs[category]} onChange={(e) => setNewNoteInputs(prev => ({...prev, [category]: e.target.value}))} onKeyDown={(e) => e.key === 'Enter' && handleAddOrUpdateNote(category, newNoteInputs[category])}/>
                     <Button onClick={() => handleAddOrUpdateNote(category, newNoteInputs[category])}><Plus className="h-4 w-4" /></Button>
                   </div>
                   <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
