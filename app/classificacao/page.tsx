@@ -34,8 +34,9 @@ import { formatDistanceToNow } from "@/lib/format-date";
 import { TruckStatusIcon } from "@/components/truck-status-icon";
 import { ClassificationForm } from "@/components/classificacao/classification-form";
 import { speak } from "@/lib/voice-notifications";
-import { usePtt } from "@/lib/use-ptt"; // Import the PTT hook
-import { PttButton } from "@/components/ui/PttButton"; // Import the PTT button
+import { usePtt } from "@/lib/use-ptt";
+import { PttButton } from "@/components/ui/PttButton";
+import AudioVisualizer from "@/components/ui/audio-visualizer";
 import { Truck, LogOut, MoreVertical, PlusCircle, Edit, Trash2, Search, Lock, Info } from 'lucide-react';
 
 export default function ClassificationPage() {
@@ -49,8 +50,14 @@ export default function ClassificationPage() {
   const [searchPlate, setSearchPlate] = useState("");
   const prevClassificationsRef = useRef<Classification[]>([]);
 
-  // Initialize PTT
-  const { status: pttStatus, startTransmitting, stopTransmitting } = usePtt('classificacao', 'operador');
+  // Update usePtt call to get streams and set correct IDs
+  const { 
+    status: pttStatus, 
+    startTransmitting, 
+    stopTransmitting, 
+    localStream, 
+    remoteStream 
+  } = usePtt('classificacao', 'operador');
 
   useEffect(() => {
     const loadSession = async () => {
@@ -194,6 +201,10 @@ export default function ClassificationPage() {
             <p className="text-md text-gray-500 dark:text-gray-400">Gerencie os caminhões que chegam para análise de carga.</p>
           </div>
           <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2">
+                <AudioVisualizer stream={localStream} label="Áudio Local"/>
+                <AudioVisualizer stream={remoteStream} label="Áudio Remoto"/>
+            </div>
             <PttButton 
               status={pttStatus} 
               startTransmitting={startTransmitting} 

@@ -15,8 +15,9 @@ import { format } from "@/lib/format-date";
 import { TruckStatusIcon } from "@/components/truck-status-icon";
 import { ElapsedTime, calculateTotalDuration } from "@/components/elapsed-time";
 import { speak } from "@/lib/voice-notifications";
-import { usePtt } from "@/lib/use-ptt"; // Import the PTT hook
-import { PttButton } from "@/components/ui/PttButton"; // Import the PTT button
+import { usePtt } from "@/lib/use-ptt";
+import { PttButton } from "@/components/ui/PttButton";
+import AudioVisualizer from "@/components/ui/audio-visualizer"; // Import the visualizer
 import { Truck, LogOut, Search, PlayCircle, StopCircle, Clock, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -29,8 +30,14 @@ export default function OperatorPage() {
   const [searchPlate, setSearchPlate] = useState("");
   const prevClassificationsRef = useRef<Classification[]>([]);
 
-  // Initialize PTT
-  const { status: pttStatus, startTransmitting, stopTransmitting } = usePtt('operador', 'classificacao');
+  // Update usePtt call to get streams
+  const { 
+    status: pttStatus, 
+    startTransmitting, 
+    stopTransmitting, 
+    localStream, 
+    remoteStream 
+  } = usePtt('operador', 'classificacao');
 
   useEffect(() => {
     const loadSession = async () => {
@@ -58,7 +65,6 @@ export default function OperatorPage() {
   }, [currentUser]);
 
   useEffect(() => {
-    // Voice notifications for status changes
     classifications.forEach(current => {
         const prev = prevClassificationsRef.current.find(p => p.id === current.id);
         if (!prev || (prev.status !== current.status)) {
@@ -97,7 +103,6 @@ export default function OperatorPage() {
 
   const releasedTrucks = filteredClassifications.filter(item => item.status === 'liberado');
   const unloadingTrucks = filteredClassifications.filter(item => item.status === 'descarregando');
-  const waitingTrucks = filteredClassifications.filter(item => item.status === 'aguardando');
   const rejectedTrucks = filteredClassifications.filter(item => item.status === 'recusado');
   const finishedTrucks = filteredClassifications.filter(item => item.status === 'concluido').sort((a, b) => new Date(b.unloadingFinishedAt!).getTime() - new Date(a.unloadingFinishedAt!).getTime());
 
@@ -114,6 +119,10 @@ export default function OperatorPage() {
             <p className="text-md text-gray-500 dark:text-gray-400">Acompanhe e gerencie o fluxo de descarga dos caminhões.</p>
           </div>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+                <AudioVisualizer stream={localStream} label="Áudio Local"/>
+                <AudioVisualizer stream={remoteStream} label="Áudio Remoto"/>
+            </div>
             <PttButton 
               status={pttStatus} 
               startTransmitting={startTransmitting} 

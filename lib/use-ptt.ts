@@ -20,8 +20,10 @@ type SignalingMessage = {
 
 export function usePtt(userId: string, targetId: string) {
   const [status, setStatus] = useState<PttStatus>('idle');
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  
   const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const localStream = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
   const bipSound = useRef<HTMLAudioElement | null>(null);
   const iceCandidateQueue = useRef<RTCIceCandidate[]>([]);
@@ -31,7 +33,6 @@ export function usePtt(userId: string, targetId: string) {
     statusRef.current = status;
   }, [status]);
 
-  // --- Robust Audio Handling --- //
   useEffect(() => {
     try {
       bipSound.current = new Audio(pttBip);
@@ -55,12 +56,12 @@ export function usePtt(userId: string, targetId: string) {
   }, []);
   
   const initializeMedia = async () => {
-    if (localStream.current) return true;
     try {
       setStatus('initializing');
-      localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      localStream.current.getTracks().forEach(track => track.enabled = false);
-      return true;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      stream.getTracks().forEach(track => track.enabled = false);
+      setLocalStream(stream);
+      return stream;
     } catch (err: any) {
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setStatus('no_mic_permission');
@@ -79,15 +80,15 @@ export function usePtt(userId: string, targetId: string) {
             description: `Não foi possível aceder ao microfone: ${err.message}`,
         });
       }
-      return false;
+      return null;
     }
   }
 
-  const setupPeerConnection = useCallback(() => {
+  const setupPeerConnection = useCallback((stream: MediaStream) => {
     const pc = new RTCPeerConnection(configuration);
 
-    localStream.current?.getTracks().forEach(track => {
-      pc.addTrack(track, localStream.current!);
+    stream.getTracks().forEach(track => {
+      pc.addTrack(track, stream);
     });
 
     pc.onicecandidate = event => {
@@ -102,6 +103,7 @@ export function usePtt(userId: string, targetId: string) {
     pc.ontrack = event => {
       if (remoteAudio.current && event.streams && event.streams[0]) {
         remoteAudio.current.srcObject = event.streams[0];
+        setRemoteStream(event.streams[0]);
       }
     };
 
@@ -115,7 +117,8 @@ export function usePtt(userId: string, targetId: string) {
         case "failed":
         case "closed":
             setStatus('idle');
-            peerConnection.current = null; // Reset connection
+            setRemoteStream(null);
+            peerConnection.current = null;
             break;
         case "connecting":
             setStatus('connecting');
@@ -131,9 +134,9 @@ export function usePtt(userId: string, targetId: string) {
 
     try {
         if (!peerConnection.current && message.type === 'offer') {
-            const micReady = await initializeMedia();
-            if (!micReady) return;
-            setupPeerConnection();
+            const stream = await initializeMedia();
+            if (!stream) return;
+            setupPeerConnection(stream);
         }
 
         const pc = peerConnection.current;
@@ -230,9 +233,9 @@ export function usePtt(userId: string, targetId: string) {
         peerConnection.current.close();
         peerConnection.current = null;
       }
-      if(localStream.current) {
-        localStream.current.getTracks().forEach(track => track.stop());
-        localStream.current = null;
+      if(localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        setLocalStream(null);
       }
       iceCandidateQueue.current = [];
     };
@@ -258,13 +261,14 @@ export function usePtt(userId: string, targetId: string) {
   const startTransmitting = async () => {
     if (!['idle', 'connected', 'receiving', 'no_mic_permission'].includes(statusRef.current)) return;
 
-    if (!localStream.current) {
-      const hasMic = await initializeMedia();
-      if (!hasMic) return;
+    let stream = localStream;
+    if (!stream) {
+      stream = await initializeMedia();
+      if (!stream) return;
     }
 
     if (!peerConnection.current) {
-      setupPeerConnection();
+      setupPeerConnection(stream);
     }
     
     const pcState = peerConnection.current?.connectionState;
@@ -272,8 +276,8 @@ export function usePtt(userId: string, targetId: string) {
         await connect();
     }
 
-    if (localStream.current) {
-      localStream.current.getTracks().forEach(track => track.enabled = true);
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.enabled = true);
       const db = getDatabase();
       const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
       set(userTxRef, true);
@@ -285,8 +289,8 @@ export function usePtt(userId: string, targetId: string) {
   const stopTransmitting = () => {
     if (statusRef.current !== 'transmitting') return;
 
-    if (localStream.current) {
-      localStream.current.getTracks().forEach(track => track.enabled = false);
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.enabled = false);
       const db = getDatabase();
       const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
       set(userTxRef, false);
@@ -294,5 +298,5 @@ export function usePtt(userId: string, targetId: string) {
     }
   };
 
-  return { status, startTransmitting, stopTransmitting };
+  return { status, startTransmitting, stopTransmitting, localStream, remoteStream };
 }
