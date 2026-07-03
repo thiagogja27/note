@@ -9,6 +9,7 @@ import type { StorageSelection, StorageLog } from "@/types/storage"
 import type { SpoutTrack } from "@/types/spout-track"
 import type { Classification, ClassificationStatus } from "@/types/classification"
 
+// Coleções existentes
 const COLLECTION_NAME = "anotacoes"
 const STORAGE_COLLECTION = "estocagem"
 const STORAGE_LOGS_COLLECTION = "storage_logs"
@@ -16,6 +17,9 @@ const SPOUT_TRACKS_COLLECTION = "spout_tracks"
 const CLASSIFICATION_COLLECTION = "classificacao" 
 const STORAGE_DOC_ID = "current"
 const USERS_COLLECTION = "usuarios"
+
+// Nova coleção para os alertas
+const ALERT_COLLECTION = "operator_alert";
 
 function cleanupObject(obj: any) {
   const newObj: any = {}
@@ -26,6 +30,8 @@ function cleanupObject(obj: any) {
   }
   return newObj
 }
+
+// ... (todo o código existente permanece aqui) ...
 
 export function isFirebaseConfigured(): boolean {
   const hasApiKey = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY
@@ -416,4 +422,49 @@ export async function getUser(userId: string): Promise<any | null> {
     console.error("[v0] Erro ao buscar usuário:", error)
     return null
   }
+}
+
+// --- Novas Funções de Alerta --- //
+
+export type OperatorAlertMessage = {
+    from: string;
+    message: string;
+    timestamp: string;
+};
+
+/**
+ * Envia um alerta para o operador.
+ * @param from - Quem está enviando o alerta (ex: nome do usuário).
+ * @param message - A mensagem de alerta.
+ */
+export async function sendAlert(from: string, message: string): Promise<void> {
+  const alertRef = ref(db, ALERT_COLLECTION);
+  const newAlert: OperatorAlertMessage = {
+    from,
+    message,
+    timestamp: new Date().toISOString(),
+  };
+  await set(alertRef, newAlert);
+}
+
+/**
+ * Fica à escuta por novos alertas para o operador.
+ * @param callback - Função a ser chamada quando um alerta é recebido ou removido.
+ * @returns Uma função para cancelar o listener.
+ */
+export function listenForAlerts(callback: (alert: OperatorAlertMessage | null) => void): () => void {
+  const alertRef = ref(db, ALERT_COLLECTION);
+  const unsubscribe = onValue(alertRef, (snapshot) => {
+    const data = snapshot.val();
+    callback(data as OperatorAlertMessage | null);
+  });
+  return unsubscribe;
+}
+
+/**
+ * Limpa/remove o alerta atual da base de dados.
+ */
+export async function clearAlert(): Promise<void> {
+  const alertRef = ref(db, ALERT_COLLECTION);
+  await remove(alertRef);
 }

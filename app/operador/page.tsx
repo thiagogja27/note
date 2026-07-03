@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth";
-import { listenToClassifications, updateClassificationStatus } from "@/lib/realtime";
+import { 
+  listenToClassifications, 
+  updateClassificationStatus,
+  listenForAlerts, // Importar
+  clearAlert, // Importar
+  type OperatorAlertMessage // Importar tipo
+} from "@/lib/realtime";
 import type { User } from "@/types/user";
 import type { Classification, ClassificationStatus } from "@/types/classification";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +24,7 @@ import { speak } from "@/lib/voice-notifications";
 import { usePtt } from "@/lib/use-ptt";
 import { PttButton } from "@/components/ui/PttButton";
 import AudioVisualizer from "@/components/ui/audio-visualizer";
+import { OperatorAlert } from "@/components/ui/operator-alert"; // Importar componente de alerta
 import { Truck, LogOut, Search, PlayCircle, StopCircle, Clock, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -28,8 +35,10 @@ export default function OperatorPage() {
   const [loading, setLoading] = useState(true);
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [searchPlate, setSearchPlate] = useState("");
+  const [alert, setAlert] = useState<OperatorAlertMessage | null>(null); // Estado para o alerta
   const prevClassificationsRef = useRef<Classification[]>([]);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const lastAlertTimestamp = useRef<string | null>(null);
 
   const { 
     status: pttStatus, 
@@ -58,6 +67,22 @@ export default function OperatorPage() {
     loadSession();
   }, [router]);
 
+  // Efeito para escutar alertas
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubscribe = listenForAlerts((receivedAlert) => {
+      setAlert(receivedAlert);
+      // Apenas falar se for um alerta novo e diferente
+      if (receivedAlert && receivedAlert.timestamp !== lastAlertTimestamp.current) {
+        speak(`Atenção, alerta urgente da classificação: ${receivedAlert.message}`);
+        lastAlertTimestamp.current = receivedAlert.timestamp;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
   useEffect(() => {
     if (!currentUser) return;
     const unsubscribe = listenToClassifications(setClassifications);
@@ -84,6 +109,15 @@ export default function OperatorPage() {
   const handleLogout = async () => {
     await clearAuthSession();
     router.push("/");
+  };
+
+  const handleDismissAlert = async () => {
+    try {
+      await clearAlert();
+      setAlert(null);
+    } catch (error) {
+      console.error("Erro ao limpar alerta:", error);
+    }
   };
 
   const handleChangeStatus = async (id: string, status: ClassificationStatus) => {
@@ -254,6 +288,14 @@ export default function OperatorPage() {
       </div>
       <Toaster />
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
+      
+      {/* Componente de Alerta */}
+      <OperatorAlert
+        open={!!alert}
+        message={alert?.message || ""}
+        from={alert?.from || ""}
+        onDismiss={handleDismissAlert}
+      />
     </div>
   );
 }

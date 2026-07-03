@@ -6,8 +6,16 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // Importar Textarea
 import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth";
-import { addClassification, listenToClassifications, updateClassificationStatus, updateClassification, deleteClassification } from "@/lib/realtime";
+import { 
+  addClassification, 
+  listenToClassifications, 
+  updateClassificationStatus, 
+  updateClassification, 
+  deleteClassification,
+  sendAlert // Importar sendAlert
+} from "@/lib/realtime";
 import type { User } from "@/types/user";
 import type { Classification, ClassificationStatus } from "@/types/classification";
 import { Button } from "@/components/ui/button";
@@ -29,6 +37,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger, // Importar AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "@/lib/format-date";
 import { TruckStatusIcon } from "@/components/truck-status-icon";
@@ -37,7 +46,56 @@ import { speak } from "@/lib/voice-notifications";
 import { usePtt } from "@/lib/use-ptt";
 import { PttButton } from "@/components/ui/PttButton";
 import AudioVisualizer from "@/components/ui/audio-visualizer";
-import { Truck, LogOut, MoreVertical, PlusCircle, Edit, Trash2, Search, Lock, Info } from 'lucide-react';
+import { Truck, LogOut, MoreVertical, PlusCircle, Edit, Trash2, Search, Lock, Info, AlertTriangle } from 'lucide-react'; // Importar AlertTriangle
+
+// Componente do formulário de alerta
+const SendAlertForm = ({ currentUser }: { currentUser: User }) => {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleSendAlert = async () => {
+    if (!message.trim()) {
+      toast({ title: "A mensagem não pode estar vazia.", variant: "destructive" });
+      return;
+    }
+    try {
+      await sendAlert(currentUser.username, message);
+      toast({ title: "Alerta enviado com sucesso!" });
+      setMessage("");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Erro ao enviar alerta:", error);
+      toast({ title: "Erro ao enviar alerta", variant: "destructive" });
+    }
+  };
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive"><AlertTriangle className="mr-2 h-4 w-4"/> Enviar Alerta</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Enviar Alerta Urgente para Operador</AlertDialogTitle>
+          <AlertDialogDescription>
+            Digite a mensagem de alerta. O operador receberá uma notificação visual e sonora.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Textarea
+          placeholder="Ex: Risco de contaminação na carga da placa ABC-1234. Inspecionar imediatamente!"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={4}
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleSendAlert}>Enviar Alerta</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
 
 export default function ClassificationPage() {
   const router = useRouter();
@@ -211,6 +269,7 @@ export default function ClassificationPage() {
               stopTransmitting={stopTransmitting} 
             />
             <p className="text-sm text-muted-foreground mt-2">Usuário: {currentUser?.username}</p>
+            {currentUser && <SendAlertForm currentUser={currentUser} />} {/* Adicionar o botão de alerta */}
             <ClassificationForm onAddClassification={handleAddClassification} currentUser={currentUser}>
                 <Button><PlusCircle className="mr-2 h-4 w-4"/>Registrar Caminhão</Button>
             </ClassificationForm>
