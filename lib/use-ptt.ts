@@ -130,7 +130,6 @@ export function usePtt(userId: string, targetId: string) {
     if (!message || message.sender === userId) return;
 
     try {
-        // Lazy initialization of peer connection for the callee
         if (!peerConnection.current && message.type === 'offer') {
             const micReady = await initializeMedia();
             if (!micReady) return;
@@ -138,7 +137,6 @@ export function usePtt(userId: string, targetId: string) {
         }
 
         const pc = peerConnection.current;
-        // Queue ICE candidates if the peer connection isn't ready or hasn't set the remote description yet.
         if (message.type === 'ice-candidate') {
             const candidate = new RTCIceCandidate(message.payload);
             if (pc && pc.remoteDescription) {
@@ -157,9 +155,8 @@ export function usePtt(userId: string, targetId: string) {
             const db = getDatabase();
             const channelId = [userId, targetId].sort().join('-');
             const signalingRef = ref(db, `ptt/channels/${channelId}/signaling/${userId}`);
-            set(signalingRef, { type: 'answer', payload: answer.toJSON(), sender: userId });
+            set(signalingRef, { type: 'answer', payload: answer, sender: userId });
 
-            // Process any queued candidates now that the remote description is set
             while (iceCandidateQueue.current.length > 0) {
                 const candidate = iceCandidateQueue.current.shift();
                 if (candidate) await pc.addIceCandidate(candidate);
@@ -169,7 +166,6 @@ export function usePtt(userId: string, targetId: string) {
 
             await pc.setRemoteDescription(new RTCSessionDescription(message.payload));
 
-            // An answer might also arrive before candidates
             while (iceCandidateQueue.current.length > 0) {
                 const candidate = iceCandidateQueue.current.shift();
                 if (candidate) await pc.addIceCandidate(candidate);
@@ -252,7 +248,7 @@ export function usePtt(userId: string, targetId: string) {
         const signalingRef = ref(db, `ptt/channels/${channelId}/signaling/${userId}`);
         const offer = await peerConnection.current.createOffer();
         await peerConnection.current.setLocalDescription(offer);
-        set(signalingRef, { type: 'offer', payload: offer.toJSON(), sender: userId });
+        set(signalingRef, { type: 'offer', payload: offer, sender: userId });
     } catch(err) {
         console.error("Error creating offer:", err);
         setStatus('error');
