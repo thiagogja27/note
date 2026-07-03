@@ -14,15 +14,18 @@
     },
     "estocagem": {
       ".read": "auth != null",
-      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
+      ".write": "auth != null"
     },
     "storage_logs": {
       ".read": "auth != null",
-      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
+      ".write": "auth != null"
     },
-    "spout_tracks": {
+     "classificacao": {
       ".read": "auth != null",
-      ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
+      ".indexOn": "status",
+      "$classificationId": {
+        ".write": "auth != null && ((root.child('usuarios').child(auth.uid).child('department').val() === 'classificacao' && (!data.exists() || data.child('status').val() === 'aguardando' || data.child('status').val() === 'recusado')) || (root.child('usuarios').child(auth.uid).child('department').val() === 'operador' && (data.child('status').val() === 'liberado' || data.child('status').val() === 'descarregando')))"
+      }
     },
     "tarefas": {
       ".read": "root.child('usuarios').child(auth.uid).child('department').val() === 'supervisor' || root.child('usuarios').child(auth.uid).child('department').val() === 'admin' || root.child('usuarios').child(auth.uid).child('department').val() === 'cco' || root.child('usuarios').child(auth.uid).child('department').val() === 'balanca'",
@@ -54,7 +57,15 @@
         ".write": "$uid === auth.uid"
       }
     },
+    "spout_tracks": {
+        ".read": "auth != null",
+        ".write": "root.child('usuarios').child(auth.uid).child('department').val() === 'cco'"
+    },
     "balancas": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "ptt": {
       ".read": "auth != null",
       ".write": "auth != null"
     }

@@ -7,11 +7,13 @@ import { RADAR_CATEGORY, INFO_CATEGORY } from "@/types/note"
 import type { Department } from "@/types/user"
 import type { StorageSelection, StorageLog } from "@/types/storage"
 import type { SpoutTrack } from "@/types/spout-track"
+import type { Classification, ClassificationStatus } from "@/types/classification"
 
 const COLLECTION_NAME = "anotacoes"
 const STORAGE_COLLECTION = "estocagem"
 const STORAGE_LOGS_COLLECTION = "storage_logs"
 const SPOUT_TRACKS_COLLECTION = "spout_tracks"
+const CLASSIFICATION_COLLECTION = "classificacao" 
 const STORAGE_DOC_ID = "current"
 const USERS_COLLECTION = "usuarios"
 
@@ -259,6 +261,85 @@ export function listenToSpoutTrack(callback: (spoutTracks: SpoutTrack[]) => void
   });
   return unsubscribe;
 }
+
+export async function addClassification(classificationData: Omit<Classification, "id" | "createdAt" | "status">): Promise<void> {
+  const classificationRef = push(ref(db, CLASSIFICATION_COLLECTION));
+  const now = new Date().toISOString();
+  const newClassification = {
+    ...cleanupObject(classificationData),
+    status: "aguardando",
+    createdAt: now,
+  };
+  await set(classificationRef, newClassification);
+}
+
+export async function updateClassification(
+  id: string, 
+  classificationData: Partial<Omit<Classification, "id">>
+): Promise<void> {
+  const classificationRef = ref(db, `${CLASSIFICATION_COLLECTION}/${id}`);
+  await update(classificationRef, cleanupObject(classificationData));
+}
+
+export async function deleteClassification(id: string): Promise<void> {
+  const classificationRef = ref(db, `${CLASSIFICATION_COLLECTION}/${id}`);
+  await remove(classificationRef);
+}
+
+export async function updateClassificationStatus(
+  id: string,
+  status: ClassificationStatus,
+  user: string,
+): Promise<void> {
+  const classificationRef = ref(db, `${CLASSIFICATION_COLLECTION}/${id}`);
+  const now = new Date().toISOString();
+  const updateData: any = { status };
+
+  if (status === "liberado") {
+    updateData.releasedAt = now;
+    updateData.releasedBy = user;
+  } else if (status === "recusado") {
+    updateData.refusedAt = now;
+    updateData.refusedBy = user;
+  } else if (status === "descarregando") {
+    updateData.unloadingStartedAt = now;
+    updateData.unloadingStartedBy = user;
+  } else if (status === "concluido") {
+    updateData.unloadingFinishedAt = now;
+    updateData.unloadingFinishedBy = user;
+  } else if (status === "aguardando") {
+    updateData.releasedAt = null;
+    updateData.releasedBy = null;
+    updateData.refusedAt = null;
+    updateData.refusedBy = null;
+    updateData.unloadingStartedAt = null;
+    updateData.unloadingStartedBy = null;
+    updateData.unloadingFinishedAt = null;
+    updateData.unloadingFinishedBy = null;
+  }
+
+  await update(classificationRef, updateData);
+}
+
+export function listenToClassifications(callback: (classifications: Classification[]) => void): () => void {
+  const classificationsRef = ref(db, CLASSIFICATION_COLLECTION);
+  const unsubscribe = onValue(classificationsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+      callback([]);
+      return;
+    }
+    const classifications: Classification[] = Object.entries(data).map(([id, value]: any) => ({
+      id,
+      ...value,
+      createdAt: new Date(value.createdAt),
+    }));
+    classifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    callback(classifications);
+  });
+  return unsubscribe;
+}
+
 
 export async function saveOrUpdateUser(user: any): Promise<void> {
   try {

@@ -40,6 +40,26 @@ import { LiveClock } from "@/components/live-clock";
 import { ExternalLinks } from "@/components/external-links";
 import { AnimatedHeader } from "@/components/animated-header";
 
+const redirectToDepartment = (router: any, department: string | undefined) => {
+  switch (department) {
+    case "cco":
+      router.push("/cco");
+      break;
+    case "supervisor":
+      router.push("/supervisor");
+      break;
+    case "classificacao":
+      router.push("/classificacao");
+      break;
+    case "operador":
+      router.push("/operador");
+      break;
+    default:
+      // Fica na página atual (balanca)
+      break;
+  }
+};
+
 export default function NotesApp() {
   const router = useRouter()
   const { openChat } = useChat()
@@ -87,8 +107,7 @@ export default function NotesApp() {
       try {
         const user = await loadAuthSession();
         if (user) {
-          if (user.department === "cco") { router.push("/cco"); return; }
-          if (user.department === "supervisor") { router.push("/supervisor"); return; }
+          redirectToDepartment(router, user.department);
           setCurrentUser(user);
           setIsAuthenticated(true);
         }
@@ -169,9 +188,9 @@ export default function NotesApp() {
   }, [currentUser])
 
   const handleLogin = (user: User) => {
-    if (user.department === "cco") { router.push("/cco"); return }
-    if (user.department === "supervisor") { router.push("/supervisor"); return }
-    setCurrentUser(user); setIsAuthenticated(true);
+    redirectToDepartment(router, user.department);
+    setCurrentUser(user); 
+    setIsAuthenticated(true);
   }
 
   const handleLogout = async () => {

@@ -1,0 +1,1 @@
+export const pttBip = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSIAAAAA//8=';
