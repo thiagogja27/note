@@ -18,13 +18,13 @@ type SignalingMessage = {
   sender: string;
 };
 
-export function usePtt(userId: string, targetId: string) {
+// The hook now accepts a ref to an <audio> element
+export function usePtt(userId: string, targetId: string, remoteAudioRef: React.RefObject<HTMLAudioElement>) {
   const [status, setStatus] = useState<PttStatus>('idle');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   
   const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const remoteAudio = useRef<HTMLAudioElement | null>(null);
   const bipSound = useRef<HTMLAudioElement | null>(null);
   const iceCandidateQueue = useRef<RTCIceCandidate[]>([]);
 
@@ -33,6 +33,7 @@ export function usePtt(userId: string, targetId: string) {
     statusRef.current = status;
   }, [status]);
 
+  // Simplified useEffect: no longer creates the remote audio element
   useEffect(() => {
     try {
       bipSound.current = new Audio(pttBip);
@@ -40,18 +41,12 @@ export function usePtt(userId: string, targetId: string) {
     } catch (e) {
       console.error("Failed to create or load bip sound:", e);
     }
-    remoteAudio.current = new Audio();
-    remoteAudio.current.autoplay = true;
 
     return () => {
-        if (bipSound.current) {
-            bipSound.current.pause();
-            bipSound.current.src = '';
-        }
-        if (remoteAudio.current) {
-            remoteAudio.current.pause();
-            remoteAudio.current.srcObject = null;
-        }
+      if (bipSound.current) {
+        bipSound.current.pause();
+        bipSound.current.src = '';
+      }
     }
   }, []);
   
@@ -65,20 +60,10 @@ export function usePtt(userId: string, targetId: string) {
     } catch (err: any) {
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setStatus('no_mic_permission');
-        console.error("Microphone permission was denied.");
-        toast({
-          variant: "destructive",
-          title: "Acesso ao microfone negado",
-          description: "É necessário permitir o acesso ao microfone nas definições do seu navegador.",
-        });
+        toast({ variant: "destructive", title: "Acesso ao microfone negado" });
       } else {
         setStatus('error');
-        console.error("Error accessing microphone:", err);
-        toast({
-            variant: "destructive",
-            title: "Erro no Microfone",
-            description: `Não foi possível aceder ao microfone: ${err.message}`,
-        });
+        toast({ variant: "destructive", title: "Erro no Microfone" });
       }
       return null;
     }
@@ -100,10 +85,12 @@ export function usePtt(userId: string, targetId: string) {
       }
     };
 
+    // ontrack now uses the passed-in ref
     pc.ontrack = event => {
-      if (remoteAudio.current && event.streams && event.streams[0]) {
-        remoteAudio.current.srcObject = event.streams[0];
+      if (remoteAudioRef.current && event.streams && event.streams[0]) {
+        remoteAudioRef.current.srcObject = event.streams[0];
         setRemoteStream(event.streams[0]);
+        remoteAudioRef.current.play().catch(e => console.error("Remote audio play failed:", e));
       }
     };
 
@@ -111,13 +98,14 @@ export function usePtt(userId: string, targetId: string) {
       const pcState = pc?.connectionState;
        switch (pcState) {
         case "connected":
-          setStatus(currentStatus => currentStatus === 'connecting' ? 'connected' : currentStatus);
+          setStatus('connected');
           break;
         case "disconnected":
         case "failed":
         case "closed":
             setStatus('idle');
             setRemoteStream(null);
+            if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
             peerConnection.current = null;
             break;
         case "connecting":
@@ -126,7 +114,7 @@ export function usePtt(userId: string, targetId: string) {
        }
     };
     peerConnection.current = pc;
-  }, [userId, targetId]);
+  }, [userId, targetId, remoteAudioRef]);
 
   const handleSignalingMessage = useCallback(async (snapshot: any) => {
     const message: SignalingMessage = snapshot.val();
@@ -149,9 +137,7 @@ export function usePtt(userId: string, targetId: string) {
             }
         } else if (message.type === 'offer') {
             if (!pc || pc.signalingState !== 'stable') return;
-            
             await pc.setRemoteDescription(new RTCSessionDescription(message.payload));
-            
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
@@ -166,9 +152,7 @@ export function usePtt(userId: string, targetId: string) {
             }
         } else if (message.type === 'answer') {
             if (!pc || pc.signalingState !== 'have-local-offer') return;
-
             await pc.setRemoteDescription(new RTCSessionDescription(message.payload));
-
             while (iceCandidateQueue.current.length > 0) {
                 const candidate = iceCandidateQueue.current.shift();
                 if (candidate) await pc.addIceCandidate(candidate);
@@ -215,8 +199,7 @@ export function usePtt(userId: string, targetId: string) {
 
     const unsubscribePresence = onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
-        const status = { online: true, timestamp: serverTimestamp() };
-        set(userStatusRef, status);
+        set(userStatusRef, { online: true, timestamp: serverTimestamp() });
         onDisconnect(userStatusRef).set({ online: false, timestamp: serverTimestamp() });
         onDisconnect(userTxRef).set(false);
       }
@@ -227,8 +210,6 @@ export function usePtt(userId: string, targetId: string) {
     return () => {
       cleanupSignaling();
       unsubscribePresence?.();
-      onDisconnect(userStatusRef).cancel();
-      onDisconnect(userTxRef).cancel();
       if (peerConnection.current) {
         peerConnection.current.close();
         peerConnection.current = null;
@@ -271,19 +252,18 @@ export function usePtt(userId: string, targetId: string) {
       setupPeerConnection(stream);
     }
     
+    localStream?.getTracks().forEach(track => track.enabled = true);
+
     const pcState = peerConnection.current?.connectionState;
     if (pcState !== 'connected' && pcState !== 'connecting') {
         await connect();
     }
 
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.enabled = true);
-      const db = getDatabase();
-      const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
-      set(userTxRef, true);
-      setStatus('transmitting');
-      bipSound.current?.play().catch(e => console.error("Bip play error:", e));
-    }
+    const db = getDatabase();
+    const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
+    set(userTxRef, true);
+    setStatus('transmitting');
+    bipSound.current?.play().catch(e => console.error("Bip play error:", e));
   };
 
   const stopTransmitting = () => {

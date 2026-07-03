@@ -17,7 +17,7 @@ import { ElapsedTime, calculateTotalDuration } from "@/components/elapsed-time";
 import { speak } from "@/lib/voice-notifications";
 import { usePtt } from "@/lib/use-ptt";
 import { PttButton } from "@/components/ui/PttButton";
-import AudioVisualizer from "@/components/ui/audio-visualizer"; // Import the visualizer
+import AudioVisualizer from "@/components/ui/audio-visualizer";
 import { Truck, LogOut, Search, PlayCircle, StopCircle, Clock, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -29,15 +29,15 @@ export default function OperatorPage() {
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [searchPlate, setSearchPlate] = useState("");
   const prevClassificationsRef = useRef<Classification[]>([]);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
-  // Update usePtt call to get streams
   const { 
     status: pttStatus, 
     startTransmitting, 
     stopTransmitting, 
     localStream, 
     remoteStream 
-  } = usePtt('operador', 'classificacao');
+  } = usePtt('operador', 'classificacao', remoteAudioRef);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -103,6 +103,7 @@ export default function OperatorPage() {
 
   const releasedTrucks = filteredClassifications.filter(item => item.status === 'liberado');
   const unloadingTrucks = filteredClassifications.filter(item => item.status === 'descarregando');
+  const waitingTrucks = filteredClassifications.filter(item => item.status === 'aguardando');
   const rejectedTrucks = filteredClassifications.filter(item => item.status === 'recusado');
   const finishedTrucks = filteredClassifications.filter(item => item.status === 'concluido').sort((a, b) => new Date(b.unloadingFinishedAt!).getTime() - new Date(a.unloadingFinishedAt!).getTime());
 
@@ -252,6 +253,7 @@ export default function OperatorPage() {
         </div>
       </div>
       <Toaster />
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
     </div>
   );
 }

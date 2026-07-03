@@ -49,15 +49,15 @@ export default function ClassificationPage() {
   const [classificationToDelete, setClassificationToDelete] = useState<string | null>(null);
   const [searchPlate, setSearchPlate] = useState("");
   const prevClassificationsRef = useRef<Classification[]>([]);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
-  // Update usePtt call to get streams and set correct IDs
   const { 
     status: pttStatus, 
     startTransmitting, 
     stopTransmitting, 
     localStream, 
     remoteStream 
-  } = usePtt('classificacao', 'operador');
+  } = usePtt('classificacao', 'operador', remoteAudioRef);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -321,6 +321,7 @@ export default function ClassificationPage() {
         </Card>
       </div>
       <Toaster />
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
