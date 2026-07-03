@@ -35,7 +35,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { UserTasks } from "@/components/user-tasks";
 import { RadarSummary } from "@/components/RadarSummary";
 import { BookOpen, Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp, Download, MessageCircle, Save, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -45,6 +44,7 @@ import { PrivateChat } from "@/components/private-chat";
 import { AnimatedHeader } from "@/components/animated-header";
 import { Dashboard } from "@/app/components/dashboard";
 import { TimelineBar } from "@/app/components/timeline-bar";
+import { PainelDeDescargaCCO } from "@/components/cco/painel-de-descarga-cco"; // Importar o novo componente
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
 const TEG_CELLS = ["A1", "B1", "C1", "A2", "B2"];
@@ -423,7 +423,7 @@ export default function CCOPage() {
             <TabsTrigger value="storage">Controle de Operação e Célula</TabsTrigger>
             <TabsTrigger value="spout-tracking">Rastreabilidade de Bicas</TabsTrigger>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="tasks">Minhas Tarefas</TabsTrigger>
+            <TabsTrigger value="discharge-panel">Painel de Descarga</TabsTrigger> {/* Alterado */}
             <TabsTrigger value="notes">Anotações</TabsTrigger>
             <TabsTrigger value="radar">RADAR</TabsTrigger>
           </TabsList>
@@ -685,8 +685,10 @@ export default function CCOPage() {
             <Dashboard spoutTracks={spoutTracks} />
           </TabsContent>
 
-          <TabsContent value="tasks">
-             {currentUser && <UserTasks currentUser={currentUser} />}
+          <TabsContent value="discharge-panel"> {/* Alterado */}
+             <div className="mt-6">
+                <PainelDeDescargaCCO />
+             </div>
           </TabsContent>
 
           <TabsContent value="radar">

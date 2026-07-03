@@ -2,86 +2,34 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
-import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth";
 import { 
   listenToClassifications, 
   updateClassificationStatus,
-  listenForAlerts, // Importar
-  clearAlert, // Importar
-  type OperatorAlertMessage // Importar tipo
+  type Classification, 
+  type ClassificationStatus
 } from "@/lib/realtime";
-import type { User } from "@/types/user";
-import type { Classification, ClassificationStatus } from "@/types/classification";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { format } from "@/lib/format-date";
 import { TruckStatusIcon } from "@/components/truck-status-icon";
 import { ElapsedTime, calculateTotalDuration } from "@/components/elapsed-time";
 import { speak } from "@/lib/voice-notifications";
-import { usePtt } from "@/lib/use-ptt";
-import { PttButton } from "@/components/ui/PttButton";
-import AudioVisualizer from "@/components/ui/audio-visualizer";
-import { OperatorAlert } from "@/components/ui/operator-alert"; // Importar componente de alerta
-import { Truck, LogOut, Search, PlayCircle, StopCircle, Clock, Check } from 'lucide-react';
+import { Truck, Search, PlayCircle, StopCircle, Clock, Check, Download } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import type { User } from "@/types/user";
 
-export default function OperatorPage() {
-  const router = useRouter();
+interface PainelDeDescargaProps {
+  currentUser: User | null;
+  isReadOnly: boolean;
+  showExportButton?: boolean;
+}
+
+export function PainelDeDescarga({ currentUser, isReadOnly, showExportButton = false }: PainelDeDescargaProps) {
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [searchPlate, setSearchPlate] = useState("");
-  const [alert, setAlert] = useState<OperatorAlertMessage | null>(null); // Estado para o alerta
   const prevClassificationsRef = useRef<Classification[]>([]);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const lastAlertTimestamp = useRef<string | null>(null);
-
-  const { 
-    status: pttStatus, 
-    startTransmitting, 
-    stopTransmitting, 
-    localStream, 
-    remoteStream 
-  } = usePtt('operador', 'classificacao', remoteAudioRef);
-
-  useEffect(() => {
-    const loadSession = async () => {
-      try {
-        const user = await loadAuthSession();
-        if (!user || user.department !== "operador") { 
-          router.push("/"); 
-          return; 
-        }
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Falha ao carregar sessão:", error);
-        router.push("/");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadSession();
-  }, [router]);
-
-  // Efeito para escutar alertas
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const unsubscribe = listenForAlerts((receivedAlert) => {
-      setAlert(receivedAlert);
-      // Apenas falar se for um alerta novo e diferente
-      if (receivedAlert && receivedAlert.timestamp !== lastAlertTimestamp.current) {
-        speak(`Atenção, alerta urgente da classificação: ${receivedAlert.message}`);
-        lastAlertTimestamp.current = receivedAlert.timestamp;
-      }
-    });
-
-    return () => unsubscribe();
-  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -89,7 +37,10 @@ export default function OperatorPage() {
     return () => unsubscribe();
   }, [currentUser]);
 
+  // Efeito para notificações sonoras (apenas para o painel não-somente-leitura, ou seja, operador)
   useEffect(() => {
+    if (isReadOnly) return;
+
     classifications.forEach(current => {
         const prev = prevClassificationsRef.current.find(p => p.id === current.id);
         if (!prev || (prev.status !== current.status)) {
@@ -104,24 +55,10 @@ export default function OperatorPage() {
         }
     });
     prevClassificationsRef.current = classifications;
-  }, [classifications]);
-
-  const handleLogout = async () => {
-    await clearAuthSession();
-    router.push("/");
-  };
-
-  const handleDismissAlert = async () => {
-    try {
-      await clearAlert();
-      setAlert(null);
-    } catch (error) {
-      console.error("Erro ao limpar alerta:", error);
-    }
-  };
+  }, [classifications, isReadOnly]);
 
   const handleChangeStatus = async (id: string, status: ClassificationStatus) => {
-    if (!currentUser) return;
+    if (!currentUser || isReadOnly) return;
     try {
       await updateClassificationStatus(id, status, currentUser.username);
       toast({ title: `Status alterado com sucesso!` });
@@ -130,84 +67,90 @@ export default function OperatorPage() {
       toast({ title: `Erro ao alterar status`, variant: "destructive" });
     }
   };
+
+  const handleExport = () => {
+    const headers = [
+      "ID", "Placa", "Produto", "Nota Fiscal", "RI (%)", "Umidade (%)", "Observações", 
+      "Status", "Criado Por", "Data Criação", 
+      "Liberado Por", "Data Liberação", "Recusado Por", "Data Recusa",
+      "Início Descarga Por", "Data Início Descarga", "Fim Descarga Por", "Data Fim Descarga",
+      "Tempo na Doca (min)", "Tempo de Descarga (min)"
+    ];
+
+    const data = classifications.map(item => {
+      const tempoNaDoca = item.releasedAt && item.unloadingStartedAt ? 
+        ((new Date(item.unloadingStartedAt).getTime() - new Date(item.releasedAt).getTime()) / 60000).toFixed(2) : '';
+
+      const tempoDeDescarga = item.unloadingStartedAt && item.unloadingFinishedAt ? 
+        ((new Date(item.unloadingFinishedAt).getTime() - new Date(item.unloadingStartedAt).getTime()) / 60000).toFixed(2) : '';
+
+      return [
+        item.id,
+        item.plate,
+        item.product || '',
+        item.invoiceNumber || '',
+        item.riPercentage?.toString() || '',
+        item.humidity?.toString() || '',
+        item.observations || '',
+        item.status,
+        item.createdBy || '',
+        item.createdAt ? format(new Date(item.createdAt), 'yyyy-MM-dd HH:mm:ss') : '',
+        item.releasedBy || '',
+        item.releasedAt ? format(new Date(item.releasedAt), 'yyyy-MM-dd HH:mm:ss') : '',
+        item.refusedBy || '',
+        item.refusedAt ? format(new Date(item.refusedAt), 'yyyy-MM-dd HH:mm:ss') : '',
+        item.unloadingStartedBy || '',
+        item.unloadingStartedAt ? format(new Date(item.unloadingStartedAt), 'yyyy-MM-dd HH:mm:ss') : '',
+        item.unloadingFinishedBy || '',
+        item.unloadingFinishedAt ? format(new Date(item.unloadingFinishedAt), 'yyyy-MM-dd HH:mm:ss') : '',
+        tempoNaDoca,
+        tempoDeDescarga
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...data].join('\n');
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `relatorio_descarga_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Relatório CSV gerado com sucesso!" });
+  };
   
   const filteredClassifications = classifications.filter(item => 
     item.plate.toLowerCase().includes(searchPlate.toLowerCase())
   );
 
-  const waitingTrucks = filteredClassifications.filter(item => item.status === 'aguardando');
   const releasedTrucks = filteredClassifications.filter(item => item.status === 'liberado');
   const unloadingTrucks = filteredClassifications.filter(item => item.status === 'descarregando');
   const rejectedTrucks = filteredClassifications.filter(item => item.status === 'recusado');
   const finishedTrucks = filteredClassifications.filter(item => item.status === 'concluido').sort((a, b) => new Date(b.unloadingFinishedAt!).getTime() - new Date(a.unloadingFinishedAt!).getTime());
 
-  if (loading || !currentUser) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" /></div>;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto p-4">
-        <header className="flex justify-between items-start mb-8">
-           <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Painel do Operador - Tombador</h1>
-            <p className="text-md text-gray-500 dark:text-gray-400">Acompanhe e gerencie o fluxo de descarga dos caminhões.</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <AudioVisualizer stream={localStream} label="Áudio Local"/>
-                <AudioVisualizer stream={remoteStream} label="Áudio Remoto"/>
-            </div>
-            <PttButton 
-              status={pttStatus} 
-              startTransmitting={startTransmitting} 
-              stopTransmitting={stopTransmitting} 
-            />
-            <p className="text-sm text-muted-foreground mt-2">Usuário: {currentUser?.username}</p>
-            <Button onClick={handleLogout} variant="outline" size="icon" title="Sair">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </header>
-
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input 
-              type="text"
-              placeholder="Buscar por placa..."
-              className="pl-10 w-full max-w-sm"
-              value={searchPlate}
-              onChange={(e) => setSearchPlate(e.target.value)}
-            />
-          </div>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input 
+            type="text"
+            placeholder="Buscar por placa..."
+            className="pl-10 w-full max-w-sm"
+            value={searchPlate}
+            onChange={(e) => setSearchPlate(e.target.value)}
+          />
         </div>
+        {showExportButton && (
+          <Button onClick={handleExport}><Download className="mr-2 h-4 w-4"/>Exportar Relatório (CSV)</Button>
+        )}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          
-          <Card className="shadow-lg border-2 border-yellow-500/80">
-            <CardHeader>
-              <CardTitle className="text-yellow-600 dark:text-yellow-400">Aguardando</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {waitingTrucks.map((item) => (
-                <div key={item.id} className="flex flex-col justify-between p-4 bg-yellow-100/50 dark:bg-yellow-900/20 rounded-lg border border-yellow-500/50">
-                  <div className="flex flex-col items-center">
-                    <TruckStatusIcon status={item.status} />
-                    <div className="text-center mt-2">
-                      <p className="font-bold text-2xl tracking-wider font-mono">{item.plate}</p>
-                      <p className="text-xs text-muted-foreground">Criado por {item.createdBy}</p>
-                      <p className="text-xs text-muted-foreground">{item.createdAt && format(new Date(item.createdAt), 'PPp')}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {waitingTrucks.length === 0 && <p className="text-center text-sm text-gray-500 py-10">Nenhum caminhão aguardando.</p>}
-            </CardContent>
-          </Card>
-
-          {/* Coluna de Liberados */}
-          <Card className="shadow-lg border-2 border-green-500/80">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        
+        {/* Colunas... */}
+        <Card className="shadow-lg border-2 border-green-500/80">
             <CardHeader>
               <CardTitle className="text-green-600 dark:text-green-400">Liberados</CardTitle>
             </CardHeader>
@@ -222,14 +165,13 @@ export default function OperatorPage() {
                       <p className="text-xs text-muted-foreground">{item.releasedAt && format(new Date(item.releasedAt), 'PPp')}</p>
                     </div>
                   </div>
-                  <Button className="mt-4 w-full" onClick={() => handleChangeStatus(item.id, 'descarregando')}><PlayCircle className="mr-2 h-4 w-4"/> Iniciar Descarga</Button>
+                  {!isReadOnly && <Button className="mt-4 w-full" onClick={() => handleChangeStatus(item.id, 'descarregando')}><PlayCircle className="mr-2 h-4 w-4"/> Iniciar Descarga</Button>}
                 </div>
               ))}
-              {releasedTrucks.length === 0 && <p className="text-center text-sm text-gray-500 py-10">Nenhum caminhão liberado.</p>}
+              {releasedTrucks.length === 0 && <p className="text-center text-sm text-gray-500 py-10">Nenhum caminhão aguardando.</p>}
             </CardContent>
           </Card>
 
-          {/* Coluna Em Descarga */}
           <Card className="shadow-lg border-2 border-blue-500/80">
             <CardHeader>
               <CardTitle className="text-blue-600 dark:text-blue-400">Em Descarga</CardTitle>
@@ -249,14 +191,13 @@ export default function OperatorPage() {
                         {item.unloadingStartedAt && <ElapsedTime startDate={item.unloadingStartedAt} />}
                     </div>
                   </div>
-                  <Button className="mt-4 w-full" variant="destructive" onClick={() => handleChangeStatus(item.id, 'concluido')}><StopCircle className="mr-2 h-4 w-4"/> Finalizar Descarga</Button>
+                  {!isReadOnly && <Button className="mt-4 w-full" variant="destructive" onClick={() => handleChangeStatus(item.id, 'concluido')}><StopCircle className="mr-2 h-4 w-4"/> Finalizar Descarga</Button>}
                 </div>
               ))}
               {unloadingTrucks.length === 0 && <p className="text-center text-sm text-gray-500 py-10">Nenhum caminhão descarregando.</p>}
             </CardContent>
           </Card>
 
-           {/* Coluna Concluídos */}
           <Card className="shadow-lg border-2 border-gray-400/80">
             <CardHeader>
               <CardTitle className="text-gray-500 dark:text-gray-400">Concluídos</CardTitle>
@@ -285,11 +226,10 @@ export default function OperatorPage() {
             </CardContent>
           </Card>
           
-          {/* Coluna de Recusados */}
           <Card className="shadow-lg border-2 border-red-500/80">
             <CardHeader>
               <CardTitle className="text-red-600 dark:text-red-400">Recusados</CardTitle>
-            </CardHeader>
+            </Header>
             <CardContent className="space-y-4">
               {rejectedTrucks.map((item) => (
                 <div key={item.id} className="flex flex-col items-center p-4 bg-red-100/50 dark:bg-red-900/20 rounded-lg border border-red-500/50">
@@ -305,18 +245,7 @@ export default function OperatorPage() {
             </CardContent>
           </Card>
 
-        </div>
       </div>
-      <Toaster />
-      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
-      
-      {/* Componente de Alerta */}
-      <OperatorAlert
-        open={!!alert}
-        message={alert?.message || ""}
-        from={alert?.from || ""}
-        onDismiss={handleDismissAlert}
-      />
     </div>
   );
 }
