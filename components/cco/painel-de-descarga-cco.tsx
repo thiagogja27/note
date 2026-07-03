@@ -60,10 +60,10 @@ export function PainelDeDescargaCCO() {
         tempoNaDoca,
         tempoDeDescarga
       ];
-      return row.join(',');
+      return row.join(';'); // Alterado para ponto e vírgula
     });
 
-    const csvContent = [headers.join(','), ...data].join('\n');
+    const csvContent = [headers.join(';'), ...data].join('\n'); // Alterado para ponto e vírgula
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
