@@ -322,6 +322,11 @@ export async function updateClassificationStatus(
     updateData.unloadingStartedBy = null;
     updateData.unloadingFinishedAt = null;
     updateData.unloadingFinishedBy = null;
+    updateData.analysisStartedAt = null; // Limpa a análise
+    updateData.analysisStartedBy = null; // Limpa a análise
+  } else if (status === "em-analise") { // Novo estado
+    updateData.analysisStartedAt = now;
+    updateData.analysisStartedBy = user;
   }
 
   await update(classificationRef, updateData);

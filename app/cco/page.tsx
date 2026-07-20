@@ -42,8 +42,8 @@ import { LiveClock } from "@/components/live-clock";
 import { useChat } from "@/contexts/chat-context";
 import { PrivateChat } from "@/components/private-chat";
 import { AnimatedHeader } from "@/components/animated-header";
-import { Dashboard } from "@/app/components/dashboard";
-import { TimelineBar } from "@/app/components/timeline-bar";
+import { Dashboard } from "@/components/dashboard";
+import { TimelineBar } from "@/components/timeline-bar";
 import { PainelDeDescargaCCO } from "@/components/cco/painel-de-descarga-cco"; // Importar o novo componente
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];

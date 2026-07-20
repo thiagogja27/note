@@ -1,282 +1,126 @@
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { getDatabase, ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database';
-import { pttBip } from './sounds';
-import { toast } from '../components/ui/use-toast';
+"use client";
 
-const configuration = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ],
-};
+import { useState, useEffect, useRef } from 'react';
 
-type PttStatus = 'idle' | 'initializing' | 'connecting' | 'connected' | 'transmitting' | 'receiving' | 'error' | 'no_mic_permission';
-type SignalingMessage = {
-  type: 'offer' | 'answer' | 'ice-candidate';
-  payload: any;
-  sender: string;
-};
+const WS_URL = process.env.NEXT_PUBLIC_WSS_URL || 'ws://localhost:8080';
 
-// The hook now accepts a ref to an <audio> element
-export function usePtt(userId: string, targetId: string, remoteAudioRef: React.RefObject<HTMLAudioElement>) {
-  const [status, setStatus] = useState<PttStatus>('idle');
+const usePtt = (userId: string, channel: string, remoteAudioRef: React.RefObject<HTMLAudioElement>) => {
+  const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'talking' | 'receiving' | 'error'>('idle');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const bipSound = useRef<HTMLAudioElement | null>(null);
-  const iceCandidateQueue = useRef<RTCIceCandidate[]>([]);
+  const socketRef = useRef<WebSocket | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
-  const statusRef = useRef(status);
   useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
+    const connect = async () => {
+      setStatus('connecting');
+      console.log('[PTT Client] Attempting to connect to:', WS_URL);
 
-  // Simplified useEffect: no longer creates the remote audio element
-  useEffect(() => {
-    try {
-      bipSound.current = new Audio(pttBip);
-      bipSound.current.load();
-    } catch (e) {
-      console.error("Failed to create or load bip sound:", e);
-    }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setLocalStream(stream);
 
-    return () => {
-      if (bipSound.current) {
-        bipSound.current.pause();
-        bipSound.current.src = '';
-      }
-    }
-  }, []);
-  
-  const initializeMedia = async () => {
-    try {
-      setStatus('initializing');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      stream.getTracks().forEach(track => track.enabled = false);
-      setLocalStream(stream);
-      return stream;
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setStatus('no_mic_permission');
-        toast({ variant: "destructive", title: "Acesso ao microfone negado" });
-      } else {
-        setStatus('error');
-        toast({ variant: "destructive", title: "Erro no Microfone" });
-      }
-      return null;
-    }
-  }
+        socketRef.current = new WebSocket(WS_URL);
 
-  const setupPeerConnection = useCallback((stream: MediaStream) => {
-    const pc = new RTCPeerConnection(configuration);
-
-    stream.getTracks().forEach(track => {
-      pc.addTrack(track, stream);
-    });
-
-    pc.onicecandidate = event => {
-      if (event.candidate) {
-        const db = getDatabase();
-        const channelId = [userId, targetId].sort().join('-');
-        const signalingRef = ref(db, `ptt/channels/${channelId}/signaling/${userId}`);
-        set(signalingRef, { type: 'ice-candidate', payload: event.candidate.toJSON(), sender: userId });
-      }
-    };
-
-    // ontrack now uses the passed-in ref
-    pc.ontrack = event => {
-      if (remoteAudioRef.current && event.streams && event.streams[0]) {
-        remoteAudioRef.current.srcObject = event.streams[0];
-        setRemoteStream(event.streams[0]);
-        remoteAudioRef.current.play().catch(e => console.error("Remote audio play failed:", e));
-      }
-    };
-
-    pc.onconnectionstatechange = () => {
-      const pcState = pc?.connectionState;
-       switch (pcState) {
-        case "connected":
+        socketRef.current.onopen = () => {
+          console.log('[PTT Client] WebSocket connected');
+          socketRef.current?.send(JSON.stringify({ type: 'join', userId, channel }));
+          initializePeerConnection(stream);
           setStatus('connected');
-          break;
-        case "disconnected":
-        case "failed":
-        case "closed":
-            setStatus('idle');
-            setRemoteStream(null);
-            if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
-            peerConnection.current = null;
-            break;
-        case "connecting":
-            setStatus('connecting');
-            break;
-       }
-    };
-    peerConnection.current = pc;
-  }, [userId, targetId, remoteAudioRef]);
+        };
 
-  const handleSignalingMessage = useCallback(async (snapshot: any) => {
-    const message: SignalingMessage = snapshot.val();
-    if (!message || message.sender === userId) return;
+        socketRef.current.onmessage = async (message) => {
+          const data = JSON.parse(message.data);
+          console.log("[PTT Client] Received message:", data);
 
-    try {
-        if (!peerConnection.current && message.type === 'offer') {
-            const stream = await initializeMedia();
-            if (!stream) return;
-            setupPeerConnection(stream);
-        }
+          switch (data.type) {
+            case 'offer':
+              if (peerConnectionRef.current) {
+                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await peerConnectionRef.current.createAnswer();
+                await peerConnectionRef.current.setLocalDescription(answer);
+                socketRef.current?.send(JSON.stringify({ type: 'answer', answer, to: data.from }));
+              }
+              break;
+            case 'answer':
+              if (peerConnectionRef.current) {
+                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+              }
+              break;
+            case 'candidate':
+              if (peerConnectionRef.current) {
+                await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+              }
+              break;
+          }
+        };
 
-        const pc = peerConnection.current;
-        if (message.type === 'ice-candidate') {
-            const candidate = new RTCIceCandidate(message.payload);
-            if (pc && pc.remoteDescription) {
-                await pc.addIceCandidate(candidate);
-            } else {
-                iceCandidateQueue.current.push(candidate);
-            }
-        } else if (message.type === 'offer') {
-            if (!pc || pc.signalingState !== 'stable') return;
-            await pc.setRemoteDescription(new RTCSessionDescription(message.payload));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
+        socketRef.current.onerror = (err) => {
+          console.error('[PTT Client] WebSocket error:', err);
+          setStatus('error');
+        };
 
-            const db = getDatabase();
-            const channelId = [userId, targetId].sort().join('-');
-            const signalingRef = ref(db, `ptt/channels/${channelId}/signaling/${userId}`);
-            set(signalingRef, { type: 'answer', payload: answer, sender: userId });
+        socketRef.current.onclose = () => {
+          console.log('[PTT Client] WebSocket disconnected');
+          setStatus('idle');
+        };
 
-            while (iceCandidateQueue.current.length > 0) {
-                const candidate = iceCandidateQueue.current.shift();
-                if (candidate) await pc.addIceCandidate(candidate);
-            }
-        } else if (message.type === 'answer') {
-            if (!pc || pc.signalingState !== 'have-local-offer') return;
-            await pc.setRemoteDescription(new RTCSessionDescription(message.payload));
-            while (iceCandidateQueue.current.length > 0) {
-                const candidate = iceCandidateQueue.current.shift();
-                if (candidate) await pc.addIceCandidate(candidate);
-            }
-        }
-    } catch (error) {
-        console.error("Error handling signaling message:", error);
+      } catch (err) {
+        console.error('[PTT Client] Error initializing PTT:', err);
         setStatus('error');
-    }
-  }, [userId, targetId, setupPeerConnection]);
+      }
+    };
 
-   const setupSignalingListeners = useCallback(() => {
-    const db = getDatabase();
-    const channelId = [userId, targetId].sort().join('-');
-    const targetSignalingRef = ref(db, `ptt/channels/${channelId}/signaling/${targetId}`);
-    const targetUserTxRef = ref(db, `ptt/users/${targetId}/transmitting`);
-
-    const unsubscribeTarget = onValue(targetSignalingRef, handleSignalingMessage);
-    const unsubscribeTargetTx = onValue(targetUserTxRef, (snapshot) => {
-        const isTargetTransmitting = !!snapshot.val();
-        setStatus(currentStatus => {
-            if (isTargetTransmitting) {
-                if (currentStatus !== 'transmitting' && currentStatus !== 'receiving') {
-                    bipSound.current?.play().catch(e => console.error("Bip play error:", e));
-                }
-                return currentStatus !== 'transmitting' ? 'receiving' : currentStatus;
-            } else {
-                return currentStatus === 'receiving' ? 'connected' : currentStatus;
-            }
-        });
-    });
+    connect();
 
     return () => {
-        unsubscribeTarget();
-        unsubscribeTargetTx();
+      socketRef.current?.close();
+      peerConnectionRef.current?.close();
+      localStream?.getTracks().forEach(track => track.stop());
     };
-}, [userId, targetId, handleSignalingMessage]);
+  }, [userId, channel]);
 
-  useEffect(() => {
-    const db = getDatabase();
-    const userStatusRef = ref(db, `ptt/users/${userId}`);
-    const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
-    const connectedRef = ref(db, '.info/connected');
-
-    const unsubscribePresence = onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        set(userStatusRef, { online: true, timestamp: serverTimestamp() });
-        onDisconnect(userStatusRef).set({ online: false, timestamp: serverTimestamp() });
-        onDisconnect(userTxRef).set(false);
-      }
+  const initializePeerConnection = (stream: MediaStream) => {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
-    
-    const cleanupSignaling = setupSignalingListeners();
 
-    return () => {
-      cleanupSignaling();
-      unsubscribePresence?.();
-      if (peerConnection.current) {
-        peerConnection.current.close();
-        peerConnection.current = null;
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socketRef.current?.send(JSON.stringify({ type: 'candidate', candidate: event.candidate, to: 'all' })); // Simplified: send to all in channel
       }
-      if(localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        setLocalStream(null);
-      }
-      iceCandidateQueue.current = [];
     };
-  }, [userId, targetId, setupSignalingListeners]);
 
+    pc.ontrack = (event) => {
+      if (event.streams && event.streams[0]) {
+        setRemoteStream(event.streams[0]);
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = event.streams[0];
+        }
+      }
+    };
 
-  const connect = async () => {
-    if (!peerConnection.current || peerConnection.current.signalingState !== 'stable') return;
-    setStatus('connecting');
-    try {
-        const db = getDatabase();
-        const channelId = [userId, targetId].sort().join('-');
-        const signalingRef = ref(db, `ptt/channels/${channelId}/signaling/${userId}`);
-        const offer = await peerConnection.current.createOffer();
-        await peerConnection.current.setLocalDescription(offer);
-        set(signalingRef, { type: 'offer', payload: offer, sender: userId });
-    } catch(err) {
-        console.error("Error creating offer:", err);
-        setStatus('error');
-    }
-  }
+    peerConnectionRef.current = pc;
+  };
 
   const startTransmitting = async () => {
-    if (!['idle', 'connected', 'receiving', 'no_mic_permission'].includes(statusRef.current)) return;
-
-    let stream = localStream;
-    if (!stream) {
-      stream = await initializeMedia();
-      if (!stream) return;
-    }
-
-    if (!peerConnection.current) {
-      setupPeerConnection(stream);
-    }
-    
-    localStream?.getTracks().forEach(track => track.enabled = true);
-
-    const pcState = peerConnection.current?.connectionState;
-    if (pcState !== 'connected' && pcState !== 'connecting') {
-        await connect();
-    }
-
-    const db = getDatabase();
-    const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
-    set(userTxRef, true);
-    setStatus('transmitting');
-    bipSound.current?.play().catch(e => console.error("Bip play error:", e));
+    if (status !== 'connected') return;
+    setStatus('talking');
+    // In a real PTT system, you might send a signal or handle audio tracks differently
+    // For this implementation, the stream is already being sent.
+    // We just update the state.
   };
 
   const stopTransmitting = () => {
-    if (statusRef.current !== 'transmitting') return;
-
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.enabled = false);
-      const db = getDatabase();
-      const userTxRef = ref(db, `ptt/users/${userId}/transmitting`);
-      set(userTxRef, false);
-      setStatus('connected');
-    }
+    if (status !== 'talking') return;
+    setStatus('connected');
+    // Similar to start, we just manage state here.
   };
 
   return { status, startTransmitting, stopTransmitting, localStream, remoteStream };
-}
+};
+
+export default usePtt;

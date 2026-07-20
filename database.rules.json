@@ -24,7 +24,7 @@
       ".read": "auth != null",
       ".indexOn": "status",
       "$classificationId": {
-        ".write": "auth != null && ((root.child('usuarios').child(auth.uid).child('department').val() === 'classificacao' && (!data.exists() || data.child('status').val() === 'aguardando' || data.child('status').val() === 'recusado')) || (root.child('usuarios').child(auth.uid).child('department').val() === 'operador' && (data.child('status').val() === 'liberado' || data.child('status').val() === 'descarregando')))"
+        ".write": "auth != null && ( (root.child('usuarios').child(auth.uid).child('department').val() === 'classificacao' && (!data.exists() || (data.child('status').val() !== 'descarregando' && data.child('status').val() !== 'concluido')) ) || (root.child('usuarios').child(auth.uid).child('department').val() === 'operador' && (data.child('status').val() === 'liberado' || data.child('status').val() === 'descarregando')) )"
       }
     },
     "operator_alert": {

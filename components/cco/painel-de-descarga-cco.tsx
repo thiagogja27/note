@@ -26,6 +26,7 @@ export function PainelDeDescargaCCO() {
     const headers = [
       "ID", "Placa", "Produto", "Nota Fiscal", "RI (%)", "Umidade (%)", "Observações", 
       "Status", "Criado Por", "Data Criação", 
+      "Em Análise Por", "Data Início Análise",
       "Liberado Por", "Data Liberação", "Recusado Por", "Data Recusa",
       "Início Descarga Por", "Data Início Descarga", "Fim Descarga Por", "Data Fim Descarga",
       "Tempo na Doca (min)", "Tempo de Descarga (min)"
@@ -49,6 +50,8 @@ export function PainelDeDescargaCCO() {
         item.status,
         item.createdBy || '',
         item.createdAt ? format(new Date(item.createdAt), 'yyyy-MM-dd HH:mm:ss') : '',
+        item.analysisStartedBy || '',
+        item.analysisStartedAt ? format(new Date(item.analysisStartedAt), 'yyyy-MM-dd HH:mm:ss') : '',
         item.releasedBy || '',
         item.releasedAt ? format(new Date(item.releasedAt), 'yyyy-MM-dd HH:mm:ss') : '',
         item.refusedBy || '',
@@ -60,11 +63,11 @@ export function PainelDeDescargaCCO() {
         tempoNaDoca,
         tempoDeDescarga
       ];
-      return row.join(';'); // Alterado para ponto e vírgula
+      return row.join(';');
     });
 
-    const csvContent = [headers.join(';'), ...data].join('\n'); // Alterado para ponto e vírgula
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [headers.join(';'), ...data].join('\n');
+    const blob = new Blob(["﻿" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -80,6 +83,7 @@ export function PainelDeDescargaCCO() {
   );
 
   const waitingTrucks = filteredClassifications.filter(item => item.status === 'aguardando');
+  const analysisTrucks = filteredClassifications.filter(item => item.status === 'em-analise');
   const releasedTrucks = filteredClassifications.filter(item => item.status === 'liberado');
   const unloadingTrucks = filteredClassifications.filter(item => item.status === 'descarregando');
   const rejectedTrucks = filteredClassifications.filter(item => item.status === 'recusado');
@@ -101,7 +105,7 @@ export function PainelDeDescargaCCO() {
         <Button onClick={handleExport}><Download className="mr-2 h-4 w-4"/>Exportar Relatório (CSV)</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         
         <Card className="shadow-lg border-2 border-yellow-500/80">
             <CardHeader>
@@ -121,6 +125,31 @@ export function PainelDeDescargaCCO() {
                 </div>
               ))}
               {waitingTrucks.length === 0 && <p className="text-center text-sm text-gray-500 py-10">Nenhum caminhão aguardando.</p>}
+            </CardContent>
+          </Card>
+
+        <Card className="shadow-lg border-2 border-purple-500/80">
+            <CardHeader>
+              <CardTitle className="text-purple-600 dark:text-purple-400">Em Análise</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {analysisTrucks.map((item) => (
+                <div key={item.id} className="flex flex-col justify-between p-4 bg-purple-100/50 dark:bg-purple-900/20 rounded-lg border border-purple-500/50">
+                  <div className="flex flex-col items-center">
+                    <TruckStatusIcon status={item.status} />
+                    <div className="text-center mt-2">
+                      <p className="font-bold text-2xl tracking-wider font-mono">{item.plate}</p>
+                       <p className="text-xs text-muted-foreground">Em análise por {item.analysisStartedBy}</p>
+                       <p className="text-xs text-muted-foreground">em {item.analysisStartedAt && format(new Date(item.analysisStartedAt), 'PPp')}</p>
+                    </div>
+                    <div className="mt-3 text-center">
+                        <p className="text-xs text-muted-foreground">Tempo decorrido</p>
+                        {item.analysisStartedAt && <ElapsedTime startDate={item.analysisStartedAt} />}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {analysisTrucks.length === 0 && <p className="text-center text-sm text-gray-500 py-10">Nenhum caminhão em análise.</p>}
             </CardContent>
           </Card>
 
