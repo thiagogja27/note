@@ -53,9 +53,6 @@ const redirectToDepartment = (router: any, department: string | undefined) => {
     case "operador":
       router.push("/operador");
       break;
-    case "especial":
-      router.push("/especial");
-      break;
     default:
       // Fica na página atual (balanca)
       break;
@@ -418,7 +415,7 @@ export default function NotesApp() {
                     <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 05:</label><Input id="teag-road-tumbador-05" value={storage?.teagRoadTombador05 || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 03:</label><div className="flex gap-2"><Input id="teag-railway-moega-03-cell" value={storage?.teagRailwayMoega03 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-03-operation" value={formatOperation(storage?.teagRailwayMoega03Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 04:</label><div className="flex gap-2"><Input id="teag-railway-moega-04-cell" value={storage?.teagRailwayMoega04 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-04-operation" value={formatOperation(storage?.teagRailwayMoega04Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
-                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 05:</label><div className="flex gap-2"><Input id="teag-railway-moega-05-cell" value={storage?.teagRailwayMoega05 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-05-operation" value={formatOperation(storage?.teagRailwayMoega05Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
+                    <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 05:</label><div className="flex gap-2"><Input id="teag-railway-moega-05-cell" value={storage?.teagRailwayMoega05 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teag-railway-moega-05-operation" value={formatOperation(storage?.tegRailwayMoega05Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                   </div>
                 </div>
               </div>
