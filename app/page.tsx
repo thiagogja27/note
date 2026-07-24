@@ -33,7 +33,6 @@ import { announceStorageChange, announceRadarMessage, setVoiceEnabled, isVoiceEn
 import { PrivateChat } from "@/components/private-chat"
 import { UserTasks } from "@/components/user-tasks"
 import { InformacoesBalancasTable } from "@/components/informacoes-balancas-table"
-import { RadarSummary } from "@/components/RadarSummary"
 import { useChat } from "@/contexts/chat-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveClock } from "@/components/live-clock";
@@ -53,6 +52,9 @@ const redirectToDepartment = (router: any, department: string | undefined) => {
       break;
     case "operador":
       router.push("/operador");
+      break;
+    case "especial":
+      router.push("/especial");
       break;
     default:
       // Fica na página atual (balanca)
@@ -291,7 +293,7 @@ export default function NotesApp() {
           <ExternalLinks />
         </div>
 
-        <div className="mb-6"><RadarSummary radarNotes={radarNotes} /></div>
+        
 
         <Tabs defaultValue="notes" className="w-full">
           <TabsList className="grid w-full grid-cols-5">

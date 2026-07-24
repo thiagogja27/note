@@ -16,6 +16,10 @@ const links = [
     href: 'https://conferente-fiscal-balanca.vercel.app/',
     label: 'Conferente de Notas',
   },
+  {
+    href: 'https://v0-cameras-ocr.vercel.app/',
+    label: 'Cameras OCR',
+  },
 ]
 
 export function ExternalLinks() {
