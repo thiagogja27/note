@@ -24,7 +24,7 @@ export interface StorageLog {
   changedBy: string;       // Nome do usuário que fez a alteração
   department: Department;    // Departamento do usuário
   timestamp: Date;           // Data e hora da alteração
-  changes: {               // Objeto com os valores que foram definidos
+  changes: Partial<{         // Objeto com os valores que foram definidos (AGORA PARCIAL)
     tegRoad: string;
     tegRoadTombador: string;
     tegRailwayMoega01: string;
@@ -33,5 +33,5 @@ export interface StorageLog {
     teagRailwayMoega03: string;
     teagRailwayMoega04: string;
     teagRailwayMoega05: string;
-  };
+  }>;
 }

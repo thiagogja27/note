@@ -301,35 +301,39 @@ export async function updateClassificationStatus(
   const now = new Date().toISOString();
   const updateData: any = { status };
 
-  if (status === "liberado") {
-    updateData.releasedAt = now;
-    updateData.releasedBy = user;
-  } else if (status === "recusado") {
-    updateData.refusedAt = now;
-    updateData.refusedBy = user;
-  } else if (status === "descarregando") {
-    updateData.unloadingStartedAt = now;
-    updateData.unloadingStartedBy = user;
-  } else if (status === "concluido") {
-    updateData.unloadingFinishedAt = now;
-    updateData.unloadingFinishedBy = user;
-  } else if (status === "aguardando") {
-    updateData.releasedAt = null;
-    updateData.releasedBy = null;
-    updateData.refusedAt = null;
-    updateData.refusedBy = null;
-    updateData.unloadingStartedAt = null;
-    updateData.unloadingStartedBy = null;
-    updateData.unloadingFinishedAt = null;
-    updateData.unloadingFinishedBy = null;
-    updateData.analysisStartedAt = null; // Limpa a análise
-    updateData.analysisStartedBy = null; // Limpa a análise
-  } else if (status === "em-analise") { // Novo estado
-    updateData.analysisStartedAt = now;
-    updateData.analysisStartedBy = user;
-  }
+  // Base clean-up for fields that will be reset or set.
+  let baseUpdate: any = {
+    releasedAt: null,
+    releasedBy: null,
+    refusedAt: null,
+    refusedBy: null,
+    analysisStartedAt: null,
+    analysisStartedBy: null,
+    unloadingStartedAt: null,
+    unloadingStartedBy: null,
+    unloadingFinishedAt: null,
+    unloadingFinishedBy: null,
+  };
 
-  await update(classificationRef, updateData);
+  if (status === "liberado") {
+    baseUpdate.releasedAt = now;
+    baseUpdate.releasedBy = user;
+  } else if (status === "recusado") {
+    baseUpdate.refusedAt = now;
+    baseUpdate.refusedBy = user;
+  } else if (status === "descarregando") {
+    baseUpdate.unloadingStartedAt = now;
+    baseUpdate.unloadingStartedBy = user;
+  } else if (status === "concluido") {
+    baseUpdate.unloadingFinishedAt = now;
+    baseUpdate.unloadingFinishedBy = user;
+  } else if (status === "em-analise") {
+    baseUpdate.analysisStartedAt = now;
+    baseUpdate.analysisStartedBy = user;
+  }
+  // For 'aguardando', all fields are already null in baseUpdate.
+
+  await update(classificationRef, { ...updateData, ...baseUpdate });
 }
 
 export function listenToClassifications(callback: (classifications: Classification[]) => void): () => void {
