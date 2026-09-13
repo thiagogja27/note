@@ -190,6 +190,11 @@ export function listenToStorageLogs(callback: (logs: StorageLog[]) => void): () 
   }
 }
 
+export async function deleteStorageLog(id: string): Promise<void> {
+  const logRef = ref(db, `${STORAGE_LOGS_COLLECTION}/${id}`);
+  await remove(logRef);
+}
+
 export async function saveStorageSelection(
   selection: Omit<StorageSelection, "id" | "updatedAt"> & { updatedBy: string; updatedByDepartment: Department },
 ): Promise<void> {

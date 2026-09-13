@@ -1,14 +1,16 @@
+
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from 'next/navigation'
 import { loadAuthSession, clearAuthSession } from "@/lib/firebase-auth"
-import { getAllUsers, listenToAllUserNotes, deleteNote, listenToRadarNotes, addNote, listenToStorage } from "@/lib/realtime"
+import { getAllUsers, listenToAllUserNotes, deleteNote, listenToRadarNotes, addNote, listenToStorage, listenToStorageLogs, deleteStorageLog } from "@/lib/realtime"
 import { listenToTasks, addTask, updateTask, deleteTask as deleteTaskFromDb } from "@/lib/tasks"
 import type { User } from "@/types/user"
 import type { Task, TaskPriority, TaskStatus, Shift } from "@/types/task"
 import type { Note } from "@/types/note"
 import { CATEGORIES, RADAR_CATEGORY } from "@/types/note"
+import type { StorageLog } from "@/types/storage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -18,7 +20,7 @@ import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users, MessageSquare, MessageCircle, Warehouse } from 'lucide-react'
+import { Plus, Pencil, Trash2, ClipboardList, LogOut, Users, MessageCircle, Warehouse, History } from 'lucide-react'
 import { formatDistanceToNow } from "@/lib/format-date"
 import { RadarSummary } from "@/components/RadarSummary"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -75,6 +77,8 @@ export default function SupervisorPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
 
   const [storage, setStorage] = useState<any | null>(null);
+  const [storageLogs, setStorageLogs] = useState<StorageLog[]>([]);
+  const [storageLogUserFilter, setStorageLogUserFilter] = useState<string>("all");
   
   useEffect(() => {
     const loadSession = async () => {
@@ -97,11 +101,13 @@ export default function SupervisorPage() {
       const unsubscribeNotes = listenToAllUserNotes(setAllNotes)
       const unsubscribeRadar = listenToRadarNotes(setRadarNotes)
       const unsubscribeStorage = listenToStorage(setStorage)
+      const unsubscribeStorageLogs = listenToStorageLogs(setStorageLogs);
       return () => {
         unsubscribeTasks()
         unsubscribeNotes()
         unsubscribeRadar()
         unsubscribeStorage()
+        unsubscribeStorageLogs()
       }
     }
   }, [currentUser])
@@ -116,6 +122,13 @@ export default function SupervisorPage() {
     }
     setFilteredNotes(notes);
   }, [allNotes, userFilter, categoryFilter]);
+
+  const filteredStorageLogs = useMemo(() => {
+    if (storageLogUserFilter === "all") {
+      return storageLogs;
+    }
+    return storageLogs.filter(log => log.changedBy === storageLogUserFilter);
+  }, [storageLogs, storageLogUserFilter]);
 
   const handleLogout = async () => {
     await clearAuthSession()
@@ -213,10 +226,38 @@ export default function SupervisorPage() {
     }
   }
 
+    const handleDeleteStorageLog = async (id: string) => {
+    const confirmed = window.confirm(
+      "Você tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita."
+    );
+    if (confirmed) {
+      try {
+        await deleteStorageLog(id);
+        toast({ title: "Registro de histórico excluído com sucesso!" });
+      } catch (error) {
+        toast({
+          title: "Erro ao excluir registro do histórico",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const formatOperation = (operation: string | undefined) => {
     if (!operation) return "Aguardando...";
     return operation === 'descarga-vagao' ? 'Descarga Vagão' : 'Descarga Caminhão';
   }
+
+    const formatChanges = (changes: StorageLog['changes']) => {
+    return Object.entries(changes).filter(([, value]) => value).map(([key, value]) => {
+        let displayValue = value;
+        if (key.toLowerCase().includes('operation')) {
+            displayValue = value === 'descarga-vagao' ? 'Desc. Vagão' : 'Desc. Caminhão';
+        }
+        const displayKey = key.replace('teg', 'TEG ').replace('teag', 'TEAG ').replace('Road', 'Rod.').replace('Railway', 'Ferr.').replace('Moega', 'M.').replace('Tombador', 'Tombador').replace('Operation', ' Op.');
+        return `${displayKey}: ${displayValue}`;
+    }).join(" | ") || "N/A";
+  };
 
   const filteredTasks = tasks.filter((task) => {
     if (filterShift !== "all" && task.shift !== filterShift && task.shift !== "Todos") return false
@@ -263,10 +304,11 @@ export default function SupervisorPage() {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="tasks">Gerenciador de Tarefas</TabsTrigger>
             <TabsTrigger value="notes">Visualizador de Anotações</TabsTrigger>
             <TabsTrigger value="storage">Controle de Estocagem</TabsTrigger>
+            <TabsTrigger value="storage-history">Histórico de Alterações</TabsTrigger>
             <TabsTrigger value="radar">RADAR</TabsTrigger>
           </TabsList>
           
@@ -329,6 +371,54 @@ export default function SupervisorPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="storage-history">
+            <div className="bg-card border border-border rounded-lg p-6 mt-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><History className="h-5 w-5"/>Histórico de Alterações de Estocagem</h2>
+              <div className="flex gap-4 mb-6">
+                  <Select value={storageLogUserFilter} onValueChange={setStorageLogUserFilter}>
+                      <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder="Filtrar por usuário" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="all">Todos os Usuários</SelectItem>
+                          {users.filter(u => u.department === 'cco').map(user => (
+                              <SelectItem key={user.id} value={user.username}>{user.username}</SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+              </div>
+              <div className="overflow-x-auto relative max-h-[600px]">
+                  <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-muted-foreground uppercase bg-secondary sticky top-0">
+                          <tr>
+                              <th scope="col" className="px-6 py-3">Data & Hora</th>
+                              <th scope="col" className="px-6 py-3">Usuário</th>
+                              <th scope="col" className="px-6 py-3">Detalhes da Alteração</th>
+                              <th scope="col" className="px-6 py-3 text-right">Ações</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {filteredStorageLogs.map(log => (
+                              <tr key={log.id} className="border-b hover:bg-secondary/50">
+                                  <td className="px-6 py-4 font-medium whitespace-nowrap">{new Date(log.timestamp).toLocaleString("pt-BR")}</td>
+                                  <td className="px-6 py-4">{log.changedBy} ({log.department.toUpperCase()})</td>
+                                  <td className="px-6 py-4">{formatChanges(log.changes)}</td>
+                                  <td className="px-6 py-4 text-right">
+                                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteStorageLog(log.id)}>
+                                          <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                  </td>
+                              </tr>
+                          ))}
+                          {filteredStorageLogs.length === 0 && (
+                              <tr><td colSpan={4} className="text-center py-8 text-muted-foreground">Nenhum registro de alteração encontrado para o filtro selecionado.</td></tr>
+                          )}
+                      </tbody>
+                  </table>
+              </div>
             </div>
           </TabsContent>
 
