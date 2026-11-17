@@ -23,7 +23,7 @@ import {
 } from "@/lib/realtime";
 import { exportStorageLogsToExcel, exportSpoutTracksToExcel } from "@/lib/export";
 import type { Note, Category } from "@/types/note";
-import type { StorageLog } from "@/types/storage";
+import type { StorageLog, StorageSelection } from "@/types/storage";
 import type { User } from "@/types/user";
 import type { SpoutTrack } from "@/types/spout-track";
 import { RADAR_CATEGORY } from "@/types/note";
@@ -47,8 +47,9 @@ import { TimelineBar } from "@/components/timeline-bar";
 import { PainelDeDescargaCCO } from "@/components/cco/painel-de-descarga-cco"; // Importar o novo componente
 
 const CCO_CATEGORIES: Category[] = ["Emails", "Incluir no relatório de balança", "Tarefas pendentes"];
+const TEAG_CELL_OPTIONS = ["A3", "B3", "A4", "TM1", "TM2", "T01", "parado"];
 const TEG_CELLS = ["A1", "B1", "C1", "A2", "B2"];
-const TEAG_CELLS = ["A3", "B3", "A4"];
+const TEAG_CELLS = ["A3", "B3", "A4", "TM1", "TM2", "T01"];
 const TEG_BELTS = ["BC205A", "TC203", "TC204", "TC212"];
 const TEAG_BELTS = ["BC4001A", "BC5001A"];
 const TEG_UNLOADING_POINTS = ["TD1", "TD6", "TD7", "Moega 1", "Moega 2"];
@@ -65,7 +66,7 @@ export default function CCOPage() {
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [radarNotes, setRadarNotes] = useState<Note[]>([]);
-  const [storageSelection, setStorageSelection] = useState<any | null>(null);
+  const [storageSelection, setStorageSelection] = useState<StorageSelection | null>(null);
   const [storageLogs, setStorageLogs] = useState<StorageLog[]>([]);
   const [spoutTracks, setSpoutTracks] = useState<SpoutTrack[]>([]);
   const [startDate, setStartDate] = useState("");
@@ -284,10 +285,18 @@ export default function CCOPage() {
   };
 
 
-  const handleStorageChange = (field: keyof Omit<any, 'id' | 'updatedAt' | 'updatedBy' | 'updatedByDepartment'>, value: string) => {
+  const handleStorageChange = (field: keyof Omit<StorageSelection, 'id' | 'updatedAt' | 'updatedBy' | 'updatedByDepartment'>, value: string) => {
     if (!currentUser) return;
 
-    const newSelection = { ...(storageSelection || {}), [field]: value };
+    const newSelection: StorageSelection = {
+      ...(storageSelection ?? {
+        id: "current",
+        updatedAt: new Date(),
+        updatedBy: currentUser.username,
+        updatedByDepartment: currentUser.department,
+      }),
+      [field]: value,
+    };
     setStorageSelection(newSelection);
 
     const performSave = async () => {
@@ -306,6 +315,10 @@ export default function CCOPage() {
             teagRoad: "TEAG Rodovia",
             teagRailway: "TEAG Ferrovia",
             teagRoadTombador05: "TEAG Rod. 05",
+            teagRoadMoega: "TEAG Moega Rodoviária",
+            teagRoadTombador01: "TEAG Tombador 1",
+            teagRoadTombador02: "TEAG Tombador 2",
+            teagRoadMoegaOperation: "Operação TEAG Moega Rodoviária",
             teagRailwayMoega03: "TEAG Ferr. 03",
             teagRailwayMoega04: "TEAG Ferr. 04",
             teagRailwayMoega05: "TEAG Ferr. 05",
@@ -462,26 +475,41 @@ export default function CCOPage() {
                           <h3 className="text-lg font-semibold">Lado TEAG</h3>
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Rodovia - Tombador 05:</label>
-                            <Select id="teag-road-tombador-05" onValueChange={(v) => handleStorageChange("teagRoadTombador05", v)} value={storageSelection?.teagRoadTombador05 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                            <Select id="teag-road-tombador-05" onValueChange={(v) => handleStorageChange("teagRoadTombador05", v)} value={storageSelection?.teagRoadTombador05 || ""}><SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Moega Rodoviária:</label>
+                            <div className="flex gap-2">
+                              <Select onValueChange={(v) => handleStorageChange("teagRoadMoega", v)} value={storageSelection?.teagRoadMoega || ""}><SelectTrigger id="teag-road-moega-cell" className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
+                              <Select onValueChange={(v) => handleStorageChange("teagRoadMoegaOperation", v)} value={storageSelection?.teagRoadMoegaOperation || "descarga-vagao"}><SelectTrigger id="teag-road-moega-operation" className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Tombador 1:</label>
+                            <Select onValueChange={(v) => handleStorageChange("teagRoadTombador01", v)} value={storageSelection?.teagRoadTombador01 || ""}><SelectTrigger id="teag-road-tombador-01"><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-muted-foreground">Tombador 2:</label>
+                            <Select onValueChange={(v) => handleStorageChange("teagRoadTombador02", v)} value={storageSelection?.teagRoadTombador02 || ""}><SelectTrigger id="teag-road-tombador-02"><SelectValue placeholder="Selecione..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 03:</label>
                              <div className="flex gap-2">
-                                <Select id="teag-railway-moega-03-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega03", v)} value={storageSelection?.teagRailwayMoega03 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teag-railway-moega-03-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega03", v)} value={storageSelection?.teagRailwayMoega03 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
                                 <Select id="teag-railway-moega-03-operation" onValueChange={(v) => handleStorageChange("teagRailwayMoega03Operation", v)} value={storageSelection?.teagRailwayMoega03Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                             </div>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 04:</label>
                              <div className="flex gap-2">
-                                <Select id="teag-railway-moega-04-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega04", v)} value={storageSelection?.teagRailwayMoega04 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teag-railway-moega-04-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega04", v)} value={storageSelection?.teagRailwayMoega04 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
                                 <Select id="teag-railway-moega-04-operation" onValueChange={(v) => handleStorageChange("teagRailwayMoega04Operation", v)} value={storageSelection?.teagRailwayMoega04Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                             </div>
                           </div>
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Ferrovia - Moega 05:</label>
                              <div className="flex gap-2">
-                                <Select id="teag-railway-moega-05-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega05", v)} value={storageSelection?.teagRailwayMoega05 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent><SelectItem value="A3">A3</SelectItem><SelectItem value="B3">B3</SelectItem><SelectItem value="A4">A4</SelectItem><SelectItem value="parado">Parado</SelectItem></SelectContent></Select>
+                                <Select id="teag-railway-moega-05-cell" onValueChange={(v) => handleStorageChange("teagRailwayMoega05", v)} value={storageSelection?.teagRailwayMoega05 || ""}><SelectTrigger className="w-1/2"><SelectValue placeholder="Célula..." /></SelectTrigger><SelectContent>{TEAG_CELL_OPTIONS.map((cell) => <SelectItem key={cell} value={cell}>{cell === "parado" ? "Parado" : cell}</SelectItem>)}</SelectContent></Select>
                                 <Select id="teag-railway-moega-05-operation" onValueChange={(v) => handleStorageChange("teagRailwayMoega05Operation", v)} value={storageSelection?.teagRailwayMoega05Operation || "descarga-vagao"}><SelectTrigger className="w-1/2"><SelectValue placeholder="Operação..." /></SelectTrigger><SelectContent><SelectItem value="descarga-vagao">Descarga Vagão</SelectItem><SelectItem value="descarga-caminhao">Descarga Caminhão</SelectItem></SelectContent></Select>
                             </div>
                           </div>

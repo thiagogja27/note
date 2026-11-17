@@ -9,6 +9,10 @@ export type StorageSelection = {
     teagRoad?: string;
     teagRailway?: string;
     teagRoadTombador05?: string;
+    teagRoadMoega?: string;
+    teagRoadMoegaOperation?: string;
+    teagRoadTombador01?: string;
+    teagRoadTombador02?: string;
     teagRailwayMoega03?: string;
     teagRailwayMoega03Operation?: string;
     teagRailwayMoega04?: string;

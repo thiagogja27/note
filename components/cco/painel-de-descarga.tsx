@@ -229,7 +229,7 @@ export function PainelDeDescarga({ currentUser, isReadOnly, showExportButton = f
           <Card className="shadow-lg border-2 border-red-500/80">
             <CardHeader>
               <CardTitle className="text-red-600 dark:text-red-400">Recusados</CardTitle>
-            </Header>
+            </CardHeader>
             <CardContent className="space-y-4">
               {rejectedTrucks.map((item) => (
                 <div key={item.id} className="flex flex-col items-center p-4 bg-red-100/50 dark:bg-red-900/20 rounded-lg border border-red-500/50">

@@ -43,6 +43,9 @@ export function StorageDisplay({ storageSelection }: StorageDisplayProps) {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CellCard title="Rodovia - Tombador 05" value={storageSelection.teagRoadTombador05} />
+          <CellCard title="Moega Rodoviária" value={storageSelection.teagRoadMoega} operation={storageSelection.teagRoadMoegaOperation} />
+          <CellCard title="Tombador 1" value={storageSelection.teagRoadTombador01} />
+          <CellCard title="Tombador 2" value={storageSelection.teagRoadTombador02} />
           <CellCard title="Ferrovia - Moega 03" value={storageSelection.teagRailwayMoega03} operation={storageSelection.teagRailwayMoega03Operation} />
           <CellCard title="Ferrovia - Moega 04" value={storageSelection.teagRailwayMoega04} operation={storageSelection.teagRailwayMoega04Operation} />
           <CellCard title="Ferrovia - Moega 05" value={storageSelection.teagRailwayMoega05} operation={storageSelection.teagRailwayMoega05Operation} />
