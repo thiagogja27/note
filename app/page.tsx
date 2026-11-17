@@ -405,7 +405,6 @@ export default function NotesApp() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Lado TEG</h3>
                   <div className="space-y-3">
-                    <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombadores 01 e 06:</label><Input id="teg-road" value={storage?.tegRoad || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-1 block">Rodovia - Tombador 07:</label><Input id="teg-road-tombador" value={storage?.tegRoadTombador || "Aguardando..."} disabled className="opacity-75 cursor-not-allowed" /></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 01:</label><div className="flex gap-2"><Input id="teg-railway-moega-01-cell" value={storage?.tegRailwayMoega01 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teg-railway-moega-01-operation" value={formatOperation(storage?.tegRailwayMoega01Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
                     <div><label className="text-sm font-medium mb-1 block">Ferrovia - Moega 02:</label><div className="flex gap-2"><Input id="teg-railway-moega-02-cell" value={storage?.tegRailwayMoega02 || "Célula..."} disabled className="opacity-75 cursor-not-allowed" /><Input id="teg-railway-moega-02-operation" value={formatOperation(storage?.tegRailwayMoega02Operation)} disabled className="opacity-75 cursor-not-allowed" /></div></div>
